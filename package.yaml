@@ -31,7 +31,7 @@ dependencies:
 - lens
 - sdl2
 - vector
-
+- bitwise
 library:
   source-dirs: src
 
