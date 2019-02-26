@@ -17,6 +17,7 @@ import Data.Word (Word8)
 import Data.Int
 import EmuState
 -- import Graphics
+import Utils (fromHex)
 
 type GameState = (EmuState, U.Vector Word8)
 
@@ -30,6 +31,13 @@ runCPU opcode gameState@(currentState, buffer) = runST $ do
   case opcode of
     "00E0" -> clearDisplay gameState
     "00EE" -> returnFromSubRoutine gameState
+    '1':xs -> jumpToAddr xs gameState
+
+jumpToAddr :: String -> GameState -> ST s GameState
+jumpToAddr addrH (currentState, buffer) = do
+  let addrI64::Int64 = fromHex addrH
+  let nextState = currentState { pc = addrI64 + 2 }
+  return (nextState, buffer)
 
 returnFromSubRoutine :: GameState -> ST s GameState
 returnFromSubRoutine (currentState, buffer) = do

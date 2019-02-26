@@ -27,3 +27,7 @@ spec = do
         pc resultState `shouldBe` 402
       it "should decrease stack pointer by 1" $ do
         sp resultState `shouldBe` 1
+    describe "1nnn" $ do
+      let (resultState, _) = runCPU "1ABC" (initialState, (U.replicate 10 1))
+      it "should set the program counter to 0xABC + 2" $ do
+        pc resultState `shouldBe` 2748 + 2 
