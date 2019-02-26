@@ -10,7 +10,7 @@ import EmuState
 
 -- import Emulator
 initialState :: EmuState
-initialState = EmuState {fileName = "", memory = "", pc = 0}
+initialState = EmuState {fileName = "", memory = "", pc = 0, sp = 2, stack = [3,2,400,4,5,6,7,8,9,10,22,13]}
 
 spec :: Spec
 spec = do
@@ -22,6 +22,8 @@ spec = do
       it "should advance the pc by 2" $ do
         (pc resultState) `shouldBe` (pc initialState) + 2
     describe "00EE" $ do
-      let 
-      it "should return from subroutine" $ do
-        runCPU "00EE" (initialState, (U.replicate 10 1)) `shouldBe` (initialState, (U.replicate 10 0))
+      let (resultState, _) = runCPU "00EE" (initialState, (U.replicate 10 1))
+      it "should set the program counter to the address at the top of the stack + 2" $ do
+        pc resultState `shouldBe` 402
+      it "should decrease stack pointer by 1" $ do
+        sp resultState `shouldBe` 1

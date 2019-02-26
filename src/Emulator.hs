@@ -14,6 +14,7 @@ import qualified Data.ByteString.Lazy as B
 import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Unboxed         as U
 import Data.Word (Word8)
+import Data.Int
 import EmuState
 -- import Graphics
 
@@ -25,10 +26,17 @@ startEmulator window rom = do
   return ()
 
 runCPU :: String -> GameState -> GameState
-runCPU opcode gameState@(currentState, buffer) = runST $ do 
+runCPU opcode gameState@(currentState, buffer) = runST $ do
   case opcode of
     "00E0" -> clearDisplay gameState
+    "00EE" -> returnFromSubRoutine gameState
 
+returnFromSubRoutine :: GameState -> ST s GameState
+returnFromSubRoutine (currentState, buffer) = do
+  let currentStack = stack currentState
+  let currentSp = sp currentState
+  let nextState = currentState { pc = currentStack!!currentSp + 2, sp = currentSp - 1}
+  return (nextState, buffer)
 
 clearDisplay :: GameState -> ST s GameState
 clearDisplay (currentState, buffer) = return (currentState {pc = pc currentState + 2}, (U.replicate (U.length buffer) 0 :: U.Vector Word8))
