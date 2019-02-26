@@ -1,3 +1,4 @@
+
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -16,18 +17,21 @@ import Data.Word (Word8)
 import EmuState
 -- import Graphics
 
--- type GameState = (EmuState, Vector Word8)
+type GameState = (EmuState, U.Vector Word8)
 
 startEmulator :: Monad m => Window -> B.ByteString -> m ()
 startEmulator window rom = do
   -- let initialState = mkState
   return ()
 
-runCPU :: String -> U.Vector Word8 -> U.Vector Word8
-runCPU opcode buffer = runST $ do 
+runCPU :: String -> GameState -> GameState
+runCPU opcode gameState@(currentState, buffer) = runST $ do 
   case opcode of
-    "00E0" -> return (U.replicate (U.length buffer) 0 :: U.Vector Word8)
+    "00E0" -> clearDisplay gameState
 
+
+clearDisplay :: GameState -> ST s GameState
+clearDisplay (currentState, buffer) = return (currentState {pc = pc currentState + 2}, (U.replicate (U.length buffer) 0 :: U.Vector Word8))
   -- bufferM <- U.thaw buffer
 
   -- U.unsafeFreeze bufferM
