@@ -1,4 +1,3 @@
-
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -6,7 +5,6 @@
 module Emulator where
 
 import SDL (Window)
-import Control.Monad.Trans.State
 import Control.Monad.ST
 
 -- import Control.Monad.Primitive    (PrimMonad, PrimState)
@@ -32,6 +30,29 @@ runCPU opcode gameState@(currentState, buffer) = runST $ do
     "00E0" -> clearDisplay gameState
     "00EE" -> returnFromSubRoutine gameState
     '1':xs -> jumpToAddr xs gameState
+    '2':xs -> callSubroutine xs gameState
+    '3':x:byteH -> skipNextInstructionIfEqual x byteH gameState
+
+skipNextInstructionIfEqual :: Char -> String -> GameState -> ST s GameState
+skipNextInstructionIfEqual xH byteH (currentState, buffer) = do
+  let byte = fromHex byteH
+  let x = fromHex [xH]
+  let currentStack = stack currentState
+  if ((U.!) currentStack x) == byte then
+    return (currentState {pc = pc currentState + 4}, buffer)
+  else
+    return (currentState {pc = pc currentState + 2}, buffer)
+
+callSubroutine :: String -> GameState -> ST s GameState
+callSubroutine addrH (currentState, buffer) = do
+  let nextSp = sp currentState + 1
+  stackM <- U.thaw (stack currentState)
+  M.write stackM nextSp (pc currentState)
+  nextStack <- U.freeze stackM
+  let nextPc = fromHex addrH + 2
+  let nextState = currentState { pc = nextPc, sp = nextSp, stack = nextStack }
+  return (nextState, buffer)
+
 
 jumpToAddr :: String -> GameState -> ST s GameState
 jumpToAddr addrH (currentState, buffer) = do
@@ -43,7 +64,7 @@ returnFromSubRoutine :: GameState -> ST s GameState
 returnFromSubRoutine (currentState, buffer) = do
   let currentStack = stack currentState
   let currentSp = sp currentState
-  let nextState = currentState { pc = currentStack!!currentSp + 2, sp = currentSp - 1}
+  let nextState = currentState { pc = (U.!) currentStack currentSp + 2, sp = currentSp - 1}
   return (nextState, buffer)
 
 clearDisplay :: GameState -> ST s GameState
