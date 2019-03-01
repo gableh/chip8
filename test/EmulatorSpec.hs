@@ -15,30 +15,45 @@ initialState = EmuState {fileName = "", memory = "", pc = 0, sp = 2, stack = U.g
 spec :: Spec
 spec =
   describe "runCPU" $ do
-    describe "00E0" $ do
+    describe "00E0 - Clear the display" $ do
       let (resultState, resultBuffer) = runCPU "00E0" (initialState, U.replicate 10 1)
       it "should clear the display" $ resultBuffer `shouldBe` U.replicate 10 0
       it "should advance the pc by 2" $ pc resultState `shouldBe` pc initialState + 2
-    describe "00EE" $ do
+
+    describe "00EE - Return from subroutine" $ do
       let (resultState, _) = runCPU "00EE" (initialState, U.replicate 10 1)
       it "should set the program counter to the address at the top of the stack + 2" $ pc resultState `shouldBe` 402
       it "should decrease stack pointer by 1" $ sp resultState `shouldBe` 1
-    describe "1nnn" $ do
+
+    describe "1nnn - Jump to location nnn" $ do
       let (resultState, _) = runCPU "1ABC" (initialState, U.replicate 10 1)
       it "should set the program counter to 0xABC + 2" $ pc resultState `shouldBe` 2748 + 2
-    describe "2nnn" $ do
+
+    describe "2nnn - Call subroutine at nnn" $ do
       let (resultState, _) = runCPU "2ABC" (initialState, U.replicate 10 1)
       it "should increment the stack pointer" $ sp resultState `shouldBe` sp initialState + 1
       it "should set the current pc to the top of the stack" $
         (U.!) (stack resultState) (sp resultState) `shouldBe` pc initialState
       it "should set the current pc to be NNN + 2" $ pc resultState `shouldBe` 2748 + 2
-    describe "3xkk" $ do
-      describe "x == kk" $ do
+
+    describe "3xkk - Skip next instruction if Vx = kk" $ do
+      describe "Vx == kk" $ do
         let newStack = U.replicate 12 255
         let (resultState, _) = runCPU "3AFF" (initialState {stack = newStack}, U.replicate 10 1)
         it "should set the next pc to be current pc + 4" $ pc resultState `shouldBe` pc initialState + 4
-      describe "x != kk" $ do
+      describe "Vx != kk" $ do
         let newStack = U.replicate 12 0
         let (resultState, _) = runCPU "3AFF" (initialState {stack = newStack}, U.replicate 10 1)
         it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
+
+    describe "4xkk - Skip next instruction if Vx != kk" $ do
+      describe "Vx == kk" $ do
+        let newStack = U.replicate 12 255
+        let (resultState, _) = runCPU "4AFF" (initialState {stack = newStack}, U.replicate 10 1)
+        it "should set the next pc to be current pc + 4" $ pc resultState `shouldBe` pc initialState + 2
+      describe "Vx != kk" $ do
+        let newStack = U.replicate 12 0
+        let (resultState, _) = runCPU "4AFF" (initialState {stack = newStack}, U.replicate 10 1)
+        it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 4
+
 

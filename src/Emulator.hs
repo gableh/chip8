@@ -31,6 +31,16 @@ runCPU opcode gameState@(currentState, buffer) =
     '1':xs -> jumpToAddr xs gameState
     '2':xs -> callSubroutine xs gameState
     '3':(x:byteH) -> skipNextInstructionIfEqual x byteH gameState
+    '4':(x:byteH) -> skipNextInstructionIfNotEqual x byteH gameState
+
+skipNextInstructionIfNotEqual :: Char -> String -> GameState -> ST s GameState
+skipNextInstructionIfNotEqual xH byteH (currentState, buffer) = do
+  let byte = fromHex byteH
+  let x = fromHex [xH]
+  let currentStack = stack currentState
+  if (U.!) currentStack x == byte
+    then return (currentState {pc = pc currentState + 2}, buffer)
+    else return (currentState {pc = pc currentState + 4}, buffer)
 
 skipNextInstructionIfEqual :: Char -> String -> GameState -> ST s GameState
 skipNextInstructionIfEqual xH byteH (currentState, buffer) = do
