@@ -8,7 +8,4 @@ import Test.QuickCheck
 import Utils
 
 spec :: Spec
-spec = do
-  describe "readHex" $ do
-    it "should read a hex string and return a Num type" $ do
-      fromHex "FF" `shouldBe` 255
+spec = describe "readHex" $ it "should read a hex string and return a Num type" $ fromHex "FF" `shouldBe` 255

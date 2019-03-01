@@ -20,28 +20,26 @@ import Utils (fromHex)
 type GameState = (EmuState, U.Vector Word8)
 
 startEmulator :: Monad m => Window -> B.ByteString -> m ()
-startEmulator window rom = do
-  -- let initialState = mkState
-  return ()
+startEmulator window rom = return ()
 
 runCPU :: String -> GameState -> GameState
-runCPU opcode gameState@(currentState, buffer) = runST $ do
+runCPU opcode gameState@(currentState, buffer) =
+  runST $
   case opcode of
     "00E0" -> clearDisplay gameState
     "00EE" -> returnFromSubRoutine gameState
     '1':xs -> jumpToAddr xs gameState
     '2':xs -> callSubroutine xs gameState
-    '3':x:byteH -> skipNextInstructionIfEqual x byteH gameState
+    '3':(x:byteH) -> skipNextInstructionIfEqual x byteH gameState
 
 skipNextInstructionIfEqual :: Char -> String -> GameState -> ST s GameState
 skipNextInstructionIfEqual xH byteH (currentState, buffer) = do
   let byte = fromHex byteH
   let x = fromHex [xH]
   let currentStack = stack currentState
-  if ((U.!) currentStack x) == byte then
-    return (currentState {pc = pc currentState + 4}, buffer)
-  else
-    return (currentState {pc = pc currentState + 2}, buffer)
+  if (U.!) currentStack x == byte
+    then return (currentState {pc = pc currentState + 4}, buffer)
+    else return (currentState {pc = pc currentState + 2}, buffer)
 
 callSubroutine :: String -> GameState -> ST s GameState
 callSubroutine addrH (currentState, buffer) = do
@@ -68,7 +66,8 @@ returnFromSubRoutine (currentState, buffer) = do
   return (nextState, buffer)
 
 clearDisplay :: GameState -> ST s GameState
-clearDisplay (currentState, buffer) = return (currentState {pc = pc currentState + 2}, (U.replicate (U.length buffer) 0 :: U.Vector Word8))
+clearDisplay (currentState, buffer) =
+  return (currentState {pc = pc currentState + 2}, U.replicate (U.length buffer) 0 :: U.Vector Word8)
   -- bufferM <- U.thaw buffer
 
-  -- U.unsafeFreeze bufferM
+  -- U.unsafeFreeze buffer

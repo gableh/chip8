@@ -1,7 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Constants where
 
-import Data.Word
+import           Data.Word
 
 hexcode0 = [0xF0, 0x90, 0x90, 0x90, 0xF0]
 hexcode1 = [0x20, 0x60, 0x20, 0x20, 0x70]

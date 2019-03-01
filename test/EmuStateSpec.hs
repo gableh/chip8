@@ -8,13 +8,8 @@ import Test.QuickCheck
 import EmuState
 
 spec :: Spec
-spec = do
+spec =
   describe "EmuState" $ do
-    let state = EmuState {
-      fileName = "testFilename",
-      memory = "ByteString"
-    }
-    it "should create a State with fileName" $ do
-       fileName state `shouldBe` "testFilename"
-    it "should create a State with memory" $ do
-       memory state `shouldBe` "ByteString"
+    let state = EmuState {fileName = "testFilename", memory = "ByteString"}
+    it "should create a State with fileName" $ fileName state `shouldBe` "testFilename"
+    it "should create a State with memory" $ memory state `shouldBe` "ByteString"
