@@ -32,13 +32,24 @@ runCPU opcode gameState@(currentState, buffer) =
     '2':xs -> callSubroutine xs gameState
     '3':(x:byteH) -> skipNextInstructionIfEqual x byteH gameState
     '4':(x:byteH) -> skipNextInstructionIfNotEqual x byteH gameState
+    '5':x:y:['0'] -> skipNextInstructionIfRegistersEqual x y gameState
+
+
+skipNextInstructionIfRegistersEqual :: Char -> Char -> GameState -> ST s GameState
+skipNextInstructionIfRegistersEqual xH yH (currentState, buffer) = do
+  let y = fromHex [yH]
+  let x = fromHex [xH]
+  let currentRegister = register currentState
+  if (U.!) currentRegister x == (U.!) currentRegister y
+    then return (currentState {pc = pc currentState + 4}, buffer)
+    else return (currentState {pc = pc currentState + 2}, buffer)
 
 skipNextInstructionIfNotEqual :: Char -> String -> GameState -> ST s GameState
 skipNextInstructionIfNotEqual xH byteH (currentState, buffer) = do
   let byte = fromHex byteH
   let x = fromHex [xH]
-  let currentStack = stack currentState
-  if (U.!) currentStack x == byte
+  let currentRegister = register currentState
+  if (U.!) currentRegister x == byte
     then return (currentState {pc = pc currentState + 2}, buffer)
     else return (currentState {pc = pc currentState + 4}, buffer)
 
@@ -46,8 +57,8 @@ skipNextInstructionIfEqual :: Char -> String -> GameState -> ST s GameState
 skipNextInstructionIfEqual xH byteH (currentState, buffer) = do
   let byte = fromHex byteH
   let x = fromHex [xH]
-  let currentStack = stack currentState
-  if (U.!) currentStack x == byte
+  let currentRegister = register currentState
+  if (U.!) currentRegister x == byte
     then return (currentState {pc = pc currentState + 4}, buffer)
     else return (currentState {pc = pc currentState + 2}, buffer)
 
