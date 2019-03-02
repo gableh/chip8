@@ -75,3 +75,12 @@ spec =
       it "it should set register Vx to kk" $ do
         let resultRegister = register resultState
         (U.!) resultRegister 10 `shouldBe` 255
+      it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
+    describe "7xkk - ADD Vx, byte" $ do
+      let newRegister = U.replicate 16 10
+      let (resultState, _) = runCPU "7AAA" (initialState {register = newRegister}, U.replicate 10 1)
+      it "it should set register Vx to register Vx + kk" $ do
+        let resultRegister = register resultState
+        (U.!) resultRegister 10 `shouldBe` 180
+      it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
+
