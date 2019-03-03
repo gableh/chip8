@@ -84,3 +84,10 @@ spec =
         (U.!) resultRegister 10 `shouldBe` 180
       it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
 
+    describe "8xy0 - LD Vx, Vy" $ do
+      let newRegister = U.generate 16 (\x -> [1..16]!!x)
+      let (resultState, _) = runCPU "80F0" (initialState {register = newRegister}, U.replicate 10 1)
+      it "it should set register V0 to 16" $ do
+        let resultRegister = register resultState
+        (U.!) resultRegister 0 `shouldBe` 16
+      it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2

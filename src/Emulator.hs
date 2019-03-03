@@ -33,8 +33,20 @@ runCPU opcode gameState@(currentState, buffer) =
     '3':(x:byteH) -> skipNextInstructionIfEqual x byteH gameState
     '4':(x:byteH) -> skipNextInstructionIfNotEqual x byteH gameState
     '5':x:y:['0'] -> skipNextInstructionIfRegistersEqual x y gameState
-    '6':(x:byteH) -> setRegister x byteH gameState
+    '6':(x:byteH) -> setRegisterWithByte x byteH gameState
     '7':(x:byteH) -> addRegister x byteH gameState
+    '8':x:y:['0'] -> setRegisterWithRegister x y gameState
+
+setRegisterWithRegister :: Char -> Char -> GameState -> ST s GameState
+setRegisterWithRegister xH yH (currentState, buffer) = do
+  let x = fromHex [xH]
+  let y = fromHex [yH]
+  let currentRegister = register currentState
+  registerM <- U.thaw currentRegister
+  M.write registerM x ((U.!) currentRegister y)
+  nextRegister <- U.freeze registerM
+  let nextState = currentState {register = nextRegister, pc = pc currentState + 2}
+  return (nextState ,buffer)
 
 addRegister :: Char -> String -> GameState -> ST s GameState
 addRegister xH byteH (currentState, buffer) = do
@@ -48,8 +60,8 @@ addRegister xH byteH (currentState, buffer) = do
   let nextState = currentState {register = nextRegister, pc = pc currentState + 2}
   return (nextState ,buffer)
 
-setRegister :: Char -> String -> GameState -> ST s GameState
-setRegister xH byteH (currentState, buffer) = do
+setRegisterWithByte :: Char -> String -> GameState -> ST s GameState
+setRegisterWithByte xH byteH (currentState, buffer) = do
   let x = fromHex [xH]
   let byte = fromHex byteH
   let currentRegister = register currentState
