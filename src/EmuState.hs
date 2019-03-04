@@ -8,9 +8,8 @@ import Constants
 import Data.Int
 import Data.Word (Word8, Word16)
 import qualified Data.Vector.Unboxed as U
---import Data.Word (Word16, Word8)
---import Control.Monad.Trans.State
 
+type GameState = (EmuState, U.Vector Word8)
 data EmuState = EmuState {
     fileName::String,
     memory::B.ByteString,
