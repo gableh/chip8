@@ -200,3 +200,21 @@ spec =
           (U.!) resultRegister 15 `shouldBe` 0
         it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
 
+    describe "8xyE - SHL Vx {, Vy}" $ do
+     it "should set VF to 1 if MSB of VF is 1" $ do
+       let newRegister = U.replicate 16 255
+       let (resultState, _) = runCPU "877E" (initialState {register = newRegister}, U.replicate 10 1)
+       let resultRegister = register resultState
+       (U.!) resultRegister 15 `shouldBe` 1
+
+     it "should set VF to 0 if MSB of VF is 0" $ do
+       let newRegister = U.generate 16 (\x -> ([0..14] ++ [0]) !! x)
+       let (resultState, _) = runCPU "867E" (initialState {register = newRegister}, U.replicate 10 1)
+       let resultRegister = register resultState
+       (U.!) resultRegister 15 `shouldBe` 0
+
+     it "should multiply Vx by 2" $ do
+       let newRegister = U.replicate 16 255
+       let (resultState, _) = runCPU "877E" (initialState {register = newRegister}, U.replicate 10 1)
+       let resultRegister = register resultState
+       (U.!) resultRegister 7 `shouldBe` 254
