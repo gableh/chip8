@@ -218,3 +218,13 @@ spec =
        let (resultState, _) = runCPU "877E" (initialState {register = newRegister}, U.replicate 10 1)
        let resultRegister = register resultState
        (U.!) resultRegister 7 `shouldBe` 254
+
+    describe "9xy0 - Skip next instruction if Vx != Vy" $ do
+      describe "Vx == Vy" $ do
+        let newRegister = U.replicate 16 255
+        let (resultState, _) = runCPU "9AF0" (initialState {register = newRegister}, U.replicate 10 1)
+        it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 4
+      describe "Vx != Vy" $ do
+        let newRegister = U.generate 16 (\x -> [1 .. 16] !! x)
+        let (resultState, _) = runCPU "9AF0" (initialState {register = newRegister}, U.replicate 10 1)
+        it "should set the next pc to be current pc + 4" $ pc resultState `shouldBe` pc initialState + 2

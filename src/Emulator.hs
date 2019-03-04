@@ -1,22 +1,22 @@
+{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell     #-}
 
 module Emulator where
 
-import SDL (Window)
-import Control.Monad.ST
+import           Control.Monad.ST
+import           SDL                         (Window)
 
 -- import Control.Monad.Primitive    (PrimMonad, PrimState)
-import qualified Data.ByteString.Lazy as B
+import           Data.Bits
+import qualified Data.ByteString.Lazy        as B
+import           Data.Int
 import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Unboxed         as U
-import Data.Word (Word8)
-import Data.Int
-import Data.Bits
-import EmuState
+import           Data.Word                   (Word8)
+import           EmuState
 -- import Graphics
-import Utils (fromHex)
+import           Utils                       (fromHex)
 
 type GameState = (EmuState, U.Vector Word8)
 type Word8Op = (Word8 -> Word8 -> Word8)
@@ -27,10 +27,10 @@ runCPU :: String -> GameState -> GameState
 runCPU opcode gameState@(currentState, buffer) =
   runST $
   case opcode of
-    "00E0" -> clearDisplay gameState
-    "00EE" -> returnFromSubRoutine gameState
-    '1':xs -> jumpToAddr xs gameState
-    '2':xs -> callSubroutine xs gameState
+    "00E0"        -> clearDisplay gameState
+    "00EE"        -> returnFromSubRoutine gameState
+    '1':xs        -> jumpToAddr xs gameState
+    '2':xs        -> callSubroutine xs gameState
     '3':(x:byteH) -> skipNextInstructionIfEqual x byteH gameState
     '4':(x:byteH) -> skipNextInstructionIfNotEqual x byteH gameState
     '5':x:y:['0'] -> skipNextInstructionIfRegistersEqual x y gameState
@@ -45,10 +45,10 @@ runCPU opcode gameState@(currentState, buffer) =
     '8':x:_:['6'] -> shrRegister x gameState
     '8':x:y:['7'] -> subtractNRegisterWithRegister x y gameState
     '8':x:y:['E'] -> shlRegister x gameState
+    '9':x:y:['0'] -> skipNextInstructionIfRegistersNotEqual x y gameState
 
 subtractNRegisterWithRegister :: Char -> Char -> GameState -> ST s GameState
 subtractNRegisterWithRegister = opRegisterWithRegister (flip (-)) (flip getBorrowFlag)
-
 
 shlRegister :: Char -> GameState -> ST s GameState
 shlRegister xH (currentState, buffer) = do
@@ -174,14 +174,20 @@ setRegisterWithByte xH byteH (currentState, buffer) = do
   return (nextState ,buffer)
 
 
+skipNextInstructionIfRegistersOp :: (Num a, Eq a) => (a -> a -> Bool) -> Char -> Char -> GameState -> ST s GameState
+skipNextInstructionIfRegistersOp op xH yH (currentState, buffer) = do
+   let y = fromHex [yH]
+   let x = fromHex [xH]
+   let currentRegister = register currentState
+   if (U.!) currentRegister x == (U.!) currentRegister y
+     then return (currentState {pc = pc currentState + 4}, buffer)
+     else return (currentState {pc = pc currentState + 2}, buffer)
+
 skipNextInstructionIfRegistersEqual :: Char -> Char -> GameState -> ST s GameState
-skipNextInstructionIfRegistersEqual xH yH (currentState, buffer) = do
-  let y = fromHex [yH]
-  let x = fromHex [xH]
-  let currentRegister = register currentState
-  if (U.!) currentRegister x == (U.!) currentRegister y
-    then return (currentState {pc = pc currentState + 4}, buffer)
-    else return (currentState {pc = pc currentState + 2}, buffer)
+skipNextInstructionIfRegistersEqual = skipNextInstructionIfRegistersOp (==)
+
+skipNextInstructionIfRegistersNotEqual :: Char -> Char -> GameState -> ST s GameState
+skipNextInstructionIfRegistersNotEqual = skipNextInstructionIfRegistersOp (/=)
 
 skipNextInstructionIfNotEqual :: Char -> String -> GameState -> ST s GameState
 skipNextInstructionIfNotEqual xH byteH (currentState, buffer) = do
