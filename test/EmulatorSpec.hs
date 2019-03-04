@@ -66,7 +66,7 @@ spec =
         let (resultState, _) = runCPU "5AF0" (initialState {register = newRegister}, U.replicate 10 1)
         it "should set the next pc to be current pc + 4" $ pc resultState `shouldBe` pc initialState + 4
       describe "Vx != Vy" $ do
-        let newRegister = U.generate 16 (\x -> [1..16]!!x)
+        let newRegister = U.generate 16 (\x -> [1 .. 16] !! x)
         let (resultState, _) = runCPU "5AF0" (initialState {register = newRegister}, U.replicate 10 1)
         it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
     describe "6xkk - LD Vx, byte" $ do
@@ -83,32 +83,53 @@ spec =
         let resultRegister = register resultState
         (U.!) resultRegister 10 `shouldBe` 180
       it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
-
     describe "8xy0 - LD Vx, Vy" $ do
-      let newRegister = U.generate 16 (\x -> [1..16]!!x)
+      let newRegister = U.generate 16 (\x -> [1 .. 16] !! x)
       let (resultState, _) = runCPU "80F0" (initialState {register = newRegister}, U.replicate 10 1)
       it "should set register V0 to 16" $ do
         let resultRegister = register resultState
         (U.!) resultRegister 0 `shouldBe` 16
       it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
     describe "8xy1 - OR Vx, Vy" $ do
-      let newRegister = U.generate 16 (\x -> [0..15]!!x)
+      let newRegister = U.generate 16 (\x -> [0 .. 15] !! x)
       let (resultState, _) = runCPU "8691" (initialState {register = newRegister}, U.replicate 10 1)
       it "should perform an OR operation on V6 and V9 and store the result in V6" $ do
         let resultRegister = register resultState
         (U.!) resultRegister 6 `shouldBe` 15
       it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
     describe "8xy2 - AND Vx, Vy" $ do
-      let newRegister = U.generate 16 (\x -> [0..15]!!x)
+      let newRegister = U.generate 16 (\x -> [0 .. 15] !! x)
       let (resultState, _) = runCPU "8692" (initialState {register = newRegister}, U.replicate 10 1)
       it "should perform an AND operation on V6 and V9 and store the result in V6" $ do
         let resultRegister = register resultState
         (U.!) resultRegister 6 `shouldBe` 0
       it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
     describe "8xy3 - XOR Vx, Vy" $ do
-      let newRegister = U.generate 16 (\x -> [0..15]!!x)
+      let newRegister = U.generate 16 (\x -> [0 .. 15] !! x)
       let (resultState, _) = runCPU "8663" (initialState {register = newRegister}, U.replicate 10 1)
       it "should perform a XOR operation on V6 and V6 and store the result in V6" $ do
         let resultRegister = register resultState
         (U.!) resultRegister 6 `shouldBe` 0
       it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
+    describe "8xy4 - ADD Vx, Vy" $ do
+      describe "if Vx  + Vy < 255" $ do
+        let newRegister = U.generate 16 (\x -> ([0..14] ++ [0]) !! x)
+        let (resultState, _) = runCPU "8674" (initialState {register = newRegister}, U.replicate 10 1)
+        it "should perform an ADD operation on V6 and V6 and store the result in V6" $ do
+          let resultRegister = register resultState
+          (U.!) resultRegister 6 `shouldBe` 13
+        it "should not set V15 to 1" $ do
+          let resultRegister = register resultState
+          (U.!) resultRegister 15 `shouldBe` 0
+        it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
+
+      describe "if Vx  + Vy > 255" $ do
+        let newRegister = (U.snoc) (U.replicate 15 255) 0
+        let (resultState, _) = runCPU "8674" (initialState {register = newRegister}, U.replicate 10 1)
+        it "should perform an ADD operation on V6 and V6 and store the result in V6" $ do
+          let resultRegister = register resultState
+          (U.!) resultRegister 6 `shouldBe` 254
+        it "should set V15 to 1" $ do
+          let resultRegister = register resultState
+          (U.!) resultRegister 15 `shouldBe` 1
+        it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2

@@ -40,6 +40,28 @@ runCPU opcode gameState@(currentState, buffer) =
     '8':x:y:['1'] -> orRegisterWithRegister x y gameState
     '8':x:y:['2'] -> andRegisterWithRegister x y gameState
     '8':x:y:['3'] -> xorRegisterWithRegister x y gameState
+    '8':x:y:['4'] -> addRegisterWithRegister x y gameState
+
+addRegisterWithRegister :: Char -> Char -> GameState -> ST s GameState
+addRegisterWithRegister xH yH (currentState, buffer) = do
+  let x = fromHex [xH]
+  let y = fromHex [yH]
+  let currentRegister = register currentState
+  let vx = (U.!) currentRegister x
+  let vy = (U.!) currentRegister y
+  let resultX = vx + vy
+  let flag = getFlag vx vy
+  registerM <- U.thaw currentRegister
+  M.write registerM x resultX
+  M.write registerM 15 flag
+  nextRegister <- U.freeze registerM
+  let nextState = currentState {register = nextRegister, pc = pc currentState + 2}
+  return (nextState ,buffer)
+
+getFlag vx vy = do
+  let x = fromIntegral vx
+  let y = fromIntegral vy
+  if x + y > 255 then 1 else 0
 
 xorRegisterWithRegister :: Char -> Char -> GameState -> ST s GameState
 xorRegisterWithRegister = bitwiseRegisterWithRegister xor
