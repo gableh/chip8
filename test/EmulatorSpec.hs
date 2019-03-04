@@ -170,6 +170,12 @@ spec =
           let resultRegister = register resultState
           (U.!) resultRegister 15 `shouldBe` 0
 
+        it "should divide Vx by 2" $ do
+          let newRegister = U.generate 16 (\x -> ([0..14] ++ [0]) !! x)
+          let (resultState, _) = runCPU "8776" (initialState {register = newRegister}, U.replicate 10 1)
+          let resultRegister = register resultState
+          (U.!) resultRegister 7 `shouldBe` 3
+
 
     describe "8xy7 - SUBN Vx, Vy" $ do
       describe "if Vy > Vx" $ do

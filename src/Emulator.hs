@@ -53,9 +53,11 @@ shrRegister xH (currentState, buffer) = do
   let x = fromHex [xH]
   let currentRegister = register currentState
   let vx = (U.!) currentRegister x
+  let resultX = shiftR vx 1
   let flag = shrFlagOp vx
   registerM <- U.thaw currentRegister
   M.write registerM 15 flag
+  M.write registerM x resultX
   nextRegister <- U.freeze registerM
   let nextState = currentState {register = nextRegister, pc = pc currentState + 2}
   return (nextState ,buffer)
