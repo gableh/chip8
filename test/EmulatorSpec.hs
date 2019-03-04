@@ -234,3 +234,8 @@ spec =
       let (resultState, _) = runCPU "AFFF" (initialState, U.replicate 10 1)
       it "should set register I to nnn" $ i resultState `shouldBe` 4095
       it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
+
+    describe "Bnnn - JP V0, addr" $ do
+      let newRegister = U.replicate 16 140
+      let (resultState, _) = runCPU "BFFF" (initialState {register = newRegister}, U.replicate 10 1)
+      it "should set the next pc to be V0 + nnn + 2" $ pc resultState `shouldBe` 4237

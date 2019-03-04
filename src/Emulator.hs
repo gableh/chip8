@@ -47,6 +47,8 @@ runCPU opcode gameState@(currentState, buffer) =
     '8':x:y:['E'] -> shlRegister x gameState
     '9':x:y:['0'] -> skipNextInstructionIfRegistersNotEqual x y gameState
     'A':byteH -> setRegisterI byteH gameState
+    'B':byteH -> jumpWithV0 byteH gameState
+
 
 setRegisterI :: String -> GameState -> ST s GameState
 setRegisterI byteH (currentState, buffer) = do
@@ -224,11 +226,18 @@ callSubroutine addrH (currentState, buffer) = do
   let nextState = currentState { pc = nextPc, sp = nextSp, stack = nextStack }
   return (nextState, buffer)
 
-
 jumpToAddr :: String -> GameState -> ST s GameState
 jumpToAddr addrH (currentState, buffer) = do
   let addrI64::Int64 = fromHex addrH
   let nextState = currentState { pc = addrI64 + 2 }
+  return (nextState, buffer)
+
+jumpWithV0 :: String -> GameState -> ST s GameState
+jumpWithV0 addrH (currentState, buffer) = do
+  let addrI64::Int64 = fromHex addrH
+  let currentRegister = register currentState
+  let nextPc = (fromIntegral $ (U.!) currentRegister 0) + addrI64
+  let nextState = currentState { pc = nextPc + 2 }
   return (nextState, buffer)
 
 returnFromSubRoutine :: GameState -> ST s GameState
