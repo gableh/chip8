@@ -155,3 +155,19 @@ spec =
           let resultRegister = register resultState
           (U.!) resultRegister 15 `shouldBe` 0
         it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
+
+      -- https://www.reddit.com/r/EmuDev/comments/72dunw/chip8_8xy6_help/
+      describe "8xy6 - SHR Vx {, Vy}" $ do
+        it "should set VF to 1 if LSB of VF is 1" $ do
+          let newRegister = U.generate 16 (\x -> ([0..14] ++ [0]) !! x)
+          let (resultState, _) = runCPU "8776" (initialState {register = newRegister}, U.replicate 10 1)
+          let resultRegister = register resultState
+          (U.!) resultRegister 15 `shouldBe` 1
+
+        it "should set VF to 0 if LSB of VF is 0" $ do
+          let newRegister = U.generate 16 (\x -> ([0..14] ++ [0]) !! x)
+          let (resultState, _) = runCPU "8676" (initialState {register = newRegister}, U.replicate 10 1)
+          let resultRegister = register resultState
+          (U.!) resultRegister 15 `shouldBe` 0
+
+

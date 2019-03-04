@@ -42,6 +42,22 @@ runCPU opcode gameState@(currentState, buffer) =
     '8':x:y:['3'] -> xorRegisterWithRegister x y gameState
     '8':x:y:['4'] -> addRegisterWithRegister x y gameState
     '8':x:y:['5'] -> subtractRegisterWithRegister x y gameState
+    '8':x:_:['6'] -> shrRegister x gameState
+
+shrRegister :: Char -> GameState -> ST s GameState
+shrRegister xH (currentState, buffer) = do
+  let x = fromHex [xH]
+  let currentRegister = register currentState
+  let vx = (U.!) currentRegister x
+  let flag = shrFlagOp vx
+  registerM <- U.thaw currentRegister
+  M.write registerM 15 flag
+  nextRegister <- U.freeze registerM
+  let nextState = currentState {register = nextRegister, pc = pc currentState + 2}
+  return (nextState ,buffer)
+
+shrFlagOp :: Word8 -> Word8
+shrFlagOp vx = vx .&. 1
 
 opRegisterWithRegister :: Word8Op -> Word8Op -> Char -> Char -> GameState -> ST s GameState
 opRegisterWithRegister op flagOp xH yH (currentState, buffer) = do
