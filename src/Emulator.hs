@@ -19,7 +19,7 @@ import EmuState
 import Utils (fromHex)
 
 type GameState = (EmuState, U.Vector Word8)
-
+type Word8Op = (Word8 -> Word8 -> Word8)
 startEmulator :: Monad m => Window -> B.ByteString -> m ()
 startEmulator window rom = return ()
 
@@ -41,16 +41,17 @@ runCPU opcode gameState@(currentState, buffer) =
     '8':x:y:['2'] -> andRegisterWithRegister x y gameState
     '8':x:y:['3'] -> xorRegisterWithRegister x y gameState
     '8':x:y:['4'] -> addRegisterWithRegister x y gameState
+    '8':x:y:['5'] -> subtractRegisterWithRegister x y gameState
 
-addRegisterWithRegister :: Char -> Char -> GameState -> ST s GameState
-addRegisterWithRegister xH yH (currentState, buffer) = do
+opRegisterWithRegister :: Word8Op -> Word8Op -> Char -> Char -> GameState -> ST s GameState
+opRegisterWithRegister op flagOp xH yH (currentState, buffer) = do
   let x = fromHex [xH]
   let y = fromHex [yH]
   let currentRegister = register currentState
   let vx = (U.!) currentRegister x
   let vy = (U.!) currentRegister y
-  let resultX = vx + vy
-  let flag = getFlag vx vy
+  let resultX = op vx vy
+  let flag = flagOp vx vy
   registerM <- U.thaw currentRegister
   M.write registerM x resultX
   M.write registerM 15 flag
@@ -58,7 +59,17 @@ addRegisterWithRegister xH yH (currentState, buffer) = do
   let nextState = currentState {register = nextRegister, pc = pc currentState + 2}
   return (nextState ,buffer)
 
-getFlag vx vy = do
+subtractRegisterWithRegister :: Char -> Char -> GameState -> ST s GameState
+subtractRegisterWithRegister = opRegisterWithRegister (-) getBorrowFlag
+
+getBorrowFlag :: (Ord a, Num p) => a -> a -> p
+getBorrowFlag vx vy = if vx > vy then 1 else 0
+
+addRegisterWithRegister :: Char -> Char -> GameState -> ST s GameState
+addRegisterWithRegister = opRegisterWithRegister (+) getCarryFlag
+
+getCarryFlag :: (Integral a, Num p) => a -> a -> p
+getCarryFlag vx vy = do
   let x = fromIntegral vx
   let y = fromIntegral vy
   if x + y > 255 then 1 else 0
@@ -73,7 +84,7 @@ orRegisterWithRegister :: Char -> Char -> GameState -> ST s GameState
 orRegisterWithRegister = bitwiseRegisterWithRegister (.|.)
 
 
-bitwiseRegisterWithRegister :: (Word8 -> Word8 -> Word8) -> Char -> Char -> GameState -> ST s GameState
+bitwiseRegisterWithRegister :: Word8Op -> Char -> Char -> GameState -> ST s GameState
 bitwiseRegisterWithRegister bitOp xH yH (currentState, buffer) = do
   let x = fromHex [xH]
   let y = fromHex [yH]
