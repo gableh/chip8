@@ -20,6 +20,7 @@ initialState =
     , sp = 2
     , stack = U.generate 12 (\x -> [3, 2, 400, 4, 5, 6, 7, 8, 9, 10, 22, 13] !! x)
     , register = U.replicate 16 0
+    , i = 0
     }
 
 spec :: Spec
@@ -223,8 +224,13 @@ spec =
       describe "Vx == Vy" $ do
         let newRegister = U.replicate 16 255
         let (resultState, _) = runCPU "9AF0" (initialState {register = newRegister}, U.replicate 10 1)
-        it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 4
+        it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
       describe "Vx != Vy" $ do
         let newRegister = U.generate 16 (\x -> [1 .. 16] !! x)
         let (resultState, _) = runCPU "9AF0" (initialState {register = newRegister}, U.replicate 10 1)
-        it "should set the next pc to be current pc + 4" $ pc resultState `shouldBe` pc initialState + 2
+        it "should set the next pc to be current pc + 4" $ pc resultState `shouldBe` pc initialState + 4
+
+    describe "Annn - LD I, addr" $ do
+      let (resultState, _) = runCPU "AFFF" (initialState, U.replicate 10 1)
+      it "should set register I to nnn" $ i resultState `shouldBe` 4095
+      it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2

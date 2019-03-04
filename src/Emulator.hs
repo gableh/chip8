@@ -46,6 +46,13 @@ runCPU opcode gameState@(currentState, buffer) =
     '8':x:y:['7'] -> subtractNRegisterWithRegister x y gameState
     '8':x:y:['E'] -> shlRegister x gameState
     '9':x:y:['0'] -> skipNextInstructionIfRegistersNotEqual x y gameState
+    'A':byteH -> setRegisterI byteH gameState
+
+setRegisterI :: String -> GameState -> ST s GameState
+setRegisterI byteH (currentState, buffer) = do
+  let byte = fromHex byteH
+  let nextState = currentState {i = byte, pc = pc currentState + 2}
+  return (nextState ,buffer)
 
 subtractNRegisterWithRegister :: Char -> Char -> GameState -> ST s GameState
 subtractNRegisterWithRegister = opRegisterWithRegister (flip (-)) (flip getBorrowFlag)
@@ -174,12 +181,12 @@ setRegisterWithByte xH byteH (currentState, buffer) = do
   return (nextState ,buffer)
 
 
-skipNextInstructionIfRegistersOp :: (Num a, Eq a) => (a -> a -> Bool) -> Char -> Char -> GameState -> ST s GameState
+skipNextInstructionIfRegistersOp :: (Word8 -> Word8 -> Bool) -> Char -> Char -> GameState -> ST s GameState
 skipNextInstructionIfRegistersOp op xH yH (currentState, buffer) = do
    let y = fromHex [yH]
    let x = fromHex [xH]
    let currentRegister = register currentState
-   if (U.!) currentRegister x == (U.!) currentRegister y
+   if (U.!) currentRegister x `op` (U.!) currentRegister y
      then return (currentState {pc = pc currentState + 4}, buffer)
      else return (currentState {pc = pc currentState + 2}, buffer)
 
