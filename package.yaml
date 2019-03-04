@@ -32,6 +32,7 @@ dependencies:
 - sdl2
 - vector
 - bitwise
+- random
 library:
   source-dirs: src
 

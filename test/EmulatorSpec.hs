@@ -8,7 +8,7 @@ import qualified Data.Vector.Unboxed as U
 import           Emulator
 import           EmuState
 import           Test.Hspec
-
+import System.Random
 -- import Test.QuickCheck
 -- import Emulator
 initialState :: EmuState
@@ -239,3 +239,8 @@ spec =
       let newRegister = U.replicate 16 140
       let (resultState, _) = runCPU "BFFF" (initialState {register = newRegister}, U.replicate 10 1)
       it "should set the next pc to be V0 + nnn + 2" $ pc resultState `shouldBe` 4237
+
+    describe "Cxkk - RND Vx, byte" $ do
+      let (resultState, _) = runCPU "CABC" (initialState, U.replicate 10 1)
+      let resultRegister = register resultState
+      it "should set register 10 to be BC AND 123" $ (U.!) resultRegister 10 `shouldBe` 188

@@ -5,8 +5,10 @@
 module Emulator where
 
 import           Control.Monad.ST
+import Control.Monad
+import Control.Monad.IO.Class (liftIO)
 import           SDL                         (Window)
-
+import System.Random
 -- import Control.Monad.Primitive    (PrimMonad, PrimState)
 import           Data.Bits
 import qualified Data.ByteString.Lazy        as B
@@ -48,7 +50,21 @@ runCPU opcode gameState@(currentState, buffer) =
     '9':x:y:['0'] -> skipNextInstructionIfRegistersNotEqual x y gameState
     'A':byteH -> setRegisterI byteH gameState
     'B':byteH -> jumpWithV0 byteH gameState
+    'C':x:kk -> setRandomVx x kk gameState
 
+-- TODO figure out how to implement random
+setRandomVx :: Char -> String -> GameState -> ST s GameState
+setRandomVx xH kkH (currentState, buffer) = do
+  let x = fromHex [xH]
+  let kk = fromHex kkH
+  let n = 255
+  let resultX = kk .&. n
+  let currentRegister = register currentState
+  registerM <- U.thaw currentRegister
+  M.write registerM x resultX
+  nextRegister <- U.freeze registerM
+  let nextState = currentState {register = nextRegister, pc = pc currentState + 2}
+  return (nextState, buffer)
 
 setRegisterI :: String -> GameState -> ST s GameState
 setRegisterI byteH (currentState, buffer) = do

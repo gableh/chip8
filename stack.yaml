@@ -52,6 +52,7 @@ extra-deps: [
   hspec-core-2.7.0,
   hspec-discover-2.7.0,
   bitwise-1.0.0.1,
+  random-1.1,
 ]
 
 # Override default flag values for local packages and extra-deps
