@@ -6,8 +6,8 @@ module Emulator where
 
 import           Control.Monad.ST
 import Control.Monad
-import Control.Monad.IO.Class (liftIO)
-import           SDL                         (Window)
+import Control.Monad.IO.Class (liftIO, MonadIO)
+import           SDL
 import System.Random
 -- import Control.Monad.Primitive    (PrimMonad, PrimState)
 import           Data.Bits
@@ -18,12 +18,27 @@ import qualified Data.Vector.Unboxed         as U
 import           Data.Word                   (Word8)
 import           EmuState
 -- import Graphics
-import           Utils                       (fromHex)
+import           Utils                       (fromHex, getOpcode)
 
 type GameState = (EmuState, U.Vector Word8)
 type Word8Op = (Word8 -> Word8 -> Word8)
-startEmulator :: Monad m => Window -> B.ByteString -> m ()
-startEmulator window rom = return ()
+startEmulator :: MonadIO m => Window -> B.ByteString -> m ()
+startEmulator window rom = do
+  let state = mkState "filename" (mkMemory rom)
+  runEmulator window (state, U.replicate 10 1)
+
+runEmulator :: MonadIO m => Window -> GameState -> m ()
+runEmulator window gameState@(currentState, buffer) = do
+  events <- pollEvents
+  let eventIsQPress event = case eventPayload event of
+          KeyboardEvent keyboardEvent ->
+              keyboardEventKeyMotion keyboardEvent == Pressed &&
+              keysymKeycode (keyboardEventKeysym keyboardEvent) == KeycodeQ
+          _ -> False
+      qPressed = any eventIsQPress events
+  let opcode = getOpcode (pc currentState) (memory currentState)
+  let nextGameState = runCPU opcode gameState
+  unless qPressed (runEmulator window gameState)
 
 runCPU :: String -> GameState -> GameState
 runCPU opcode gameState@(currentState, buffer) =
