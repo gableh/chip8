@@ -43,6 +43,10 @@ runCPU opcode gameState@(currentState, buffer) =
     '8':x:y:['4'] -> addRegisterWithRegister x y gameState
     '8':x:y:['5'] -> subtractRegisterWithRegister x y gameState
     '8':x:_:['6'] -> shrRegister x gameState
+    '8':x:y:['7'] -> subtractNRegisterWithRegister x y gameState
+
+subtractNRegisterWithRegister :: Char -> Char -> GameState -> ST s GameState
+subtractNRegisterWithRegister = opRegisterWithRegister (flip (-)) (flip getBorrowFlag)
 
 shrRegister :: Char -> GameState -> ST s GameState
 shrRegister xH (currentState, buffer) = do

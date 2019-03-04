@@ -134,7 +134,7 @@ spec =
           (U.!) resultRegister 15 `shouldBe` 1
         it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
     describe "8xy5 - SUB Vx, Vy" $ do
-      describe "if Vx < Vy" $ do
+      describe "if Vx > Vy" $ do
         let newRegister = U.generate 16 (\x -> ([0..14] ++ [0]) !! x)
         let (resultState, _) = runCPU "8765" (initialState {register = newRegister}, U.replicate 10 1)
         it "should perform a SUB operation on V7 and V6 and store the result in V6" $ do
@@ -145,7 +145,7 @@ spec =
           (U.!) resultRegister 15 `shouldBe` 1
         it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
 
-      describe "if Vx > Vy" $ do
+      describe "if Vx < Vy" $ do
         let newRegister = U.generate 16 (\x -> ([0..14] ++ [0]) !! x)
         let (resultState, _) = runCPU "8675" (initialState {register = newRegister}, U.replicate 10 1)
         it "should perform a SUB operation on V6 and V7 and store the result in V6" $ do
@@ -170,4 +170,27 @@ spec =
           let resultRegister = register resultState
           (U.!) resultRegister 15 `shouldBe` 0
 
+
+    describe "8xy7 - SUBN Vx, Vy" $ do
+      describe "if Vy > Vx" $ do
+        let newRegister = U.generate 16 (\x -> ([0..14] ++ [0]) !! x)
+        let (resultState, _) = runCPU "8677" (initialState {register = newRegister}, U.replicate 10 1)
+        it "should perform a SUBN operation on V7 and V6 and store the result in V6" $ do
+          let resultRegister = register resultState
+          (U.!) resultRegister 6 `shouldBe` 1
+        it "should not set V15 to 1" $ do
+          let resultRegister = register resultState
+          (U.!) resultRegister 15 `shouldBe` 1
+        it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
+
+      describe "if Vy < Vx" $ do
+        let newRegister = U.generate 16 (\x -> ([0..14] ++ [0]) !! x)
+        let (resultState, _) = runCPU "8767" (initialState {register = newRegister}, U.replicate 10 1)
+        it "should perform a SUB operation on V6 and V7 and store the result in V6" $ do
+          let resultRegister = register resultState
+          (U.!) resultRegister 7 `shouldBe` 255
+        it "should set V15 to 1" $ do
+          let resultRegister = register resultState
+          (U.!) resultRegister 15 `shouldBe` 0
+        it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
 
