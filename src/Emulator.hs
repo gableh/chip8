@@ -38,16 +38,27 @@ runCPU opcode gameState@(currentState, buffer) =
     '7':(x:byteH) -> addRegister x byteH gameState
     '8':x:y:['0'] -> setRegisterWithRegister x y gameState
     '8':x:y:['1'] -> orRegisterWithRegister x y gameState
+    '8':x:y:['2'] -> andRegisterWithRegister x y gameState
+    '8':x:y:['3'] -> xorRegisterWithRegister x y gameState
 
+xorRegisterWithRegister :: Char -> Char -> GameState -> ST s GameState
+xorRegisterWithRegister = bitwiseRegisterWithRegister xor
+
+andRegisterWithRegister :: Char -> Char -> GameState -> ST s GameState
+andRegisterWithRegister = bitwiseRegisterWithRegister (.&.)
 
 orRegisterWithRegister :: Char -> Char -> GameState -> ST s GameState
-orRegisterWithRegister xH yH (currentState, buffer) = do
+orRegisterWithRegister = bitwiseRegisterWithRegister (.|.)
+
+
+bitwiseRegisterWithRegister :: (Word8 -> Word8 -> Word8) -> Char -> Char -> GameState -> ST s GameState
+bitwiseRegisterWithRegister bitOp xH yH (currentState, buffer) = do
   let x = fromHex [xH]
   let y = fromHex [yH]
   let currentRegister = register currentState
   let vx = (U.!) currentRegister x
   let vy = (U.!) currentRegister y
-  let resultX = vx .|. vy
+  let resultX = bitOp vx vy
   registerM <- U.thaw currentRegister
   M.write registerM x resultX
   nextRegister <- U.freeze registerM

@@ -98,3 +98,17 @@ spec =
         let resultRegister = register resultState
         (U.!) resultRegister 6 `shouldBe` 15
       it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
+    describe "8xy2 - AND Vx, Vy" $ do
+      let newRegister = U.generate 16 (\x -> [0..15]!!x)
+      let (resultState, _) = runCPU "8692" (initialState {register = newRegister}, U.replicate 10 1)
+      it "should perform an AND operation on V6 and V9 and store the result in V6" $ do
+        let resultRegister = register resultState
+        (U.!) resultRegister 6 `shouldBe` 0
+      it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
+    describe "8xy3 - XOR Vx, Vy" $ do
+      let newRegister = U.generate 16 (\x -> [0..15]!!x)
+      let (resultState, _) = runCPU "8663" (initialState {register = newRegister}, U.replicate 10 1)
+      it "should perform a XOR operation on V6 and V6 and store the result in V6" $ do
+        let resultRegister = register resultState
+        (U.!) resultRegister 6 `shouldBe` 0
+      it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
