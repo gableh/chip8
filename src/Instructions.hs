@@ -10,6 +10,7 @@ import Data.Word
 import Data.Int
 import           Data.Bits
 import           Utils                       (fromHex)
+
 -- TODO figure out how to implement random
 setRandomVx :: Char -> String -> GameState -> ST s GameState
 setRandomVx xH kkH (currentState, buffer) = do

@@ -5,14 +5,13 @@ module Emulator where
 
 import           Control.Monad.ST
 import Control.Monad
-import Control.Monad.IO.Class (liftIO, MonadIO)
+import Control.Monad.IO.Class (MonadIO)
 import           SDL
 import System.Random
 import qualified Data.ByteString.Lazy        as B
 import           EmuState
--- import Graphics
 import           Utils                       (getOpcode)
-import Constants
+import Constants ()
 import qualified Data.Vector.Unboxed as U
 import Instructions
 
