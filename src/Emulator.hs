@@ -13,6 +13,7 @@ import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Unboxed         as U
 import Data.Word (Word8)
 import Data.Int
+import Data.Bits
 import EmuState
 -- import Graphics
 import Utils (fromHex)
@@ -36,6 +37,22 @@ runCPU opcode gameState@(currentState, buffer) =
     '6':(x:byteH) -> setRegisterWithByte x byteH gameState
     '7':(x:byteH) -> addRegister x byteH gameState
     '8':x:y:['0'] -> setRegisterWithRegister x y gameState
+    '8':x:y:['1'] -> orRegisterWithRegister x y gameState
+
+
+orRegisterWithRegister :: Char -> Char -> GameState -> ST s GameState
+orRegisterWithRegister xH yH (currentState, buffer) = do
+  let x = fromHex [xH]
+  let y = fromHex [yH]
+  let currentRegister = register currentState
+  let vx = (U.!) currentRegister x
+  let vy = (U.!) currentRegister y
+  let resultX = vx .|. vy
+  registerM <- U.thaw currentRegister
+  M.write registerM x resultX
+  nextRegister <- U.freeze registerM
+  let nextState = currentState {register = nextRegister, pc = pc currentState + 2}
+  return (nextState ,buffer)
 
 setRegisterWithRegister :: Char -> Char -> GameState -> ST s GameState
 setRegisterWithRegister xH yH (currentState, buffer) = do
