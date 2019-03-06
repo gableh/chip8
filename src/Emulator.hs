@@ -5,7 +5,7 @@ module Emulator where
 
 import           Control.Monad.ST
 import Control.Monad
-import Control.Monad.IO.Class (MonadIO)
+import Control.Monad.IO.Class (MonadIO, liftIO)
 import           SDL
 import System.Random
 import qualified Data.Char as C
@@ -15,12 +15,12 @@ import           Utils                       (getOpcode)
 import qualified Data.Vector.Unboxed as U
 import Instructions
 
-startEmulator ::  Window -> B.ByteString ->IO()
+startEmulator :: MonadIO m => Window -> B.ByteString -> m ()
 startEmulator window rom = do
   let state = mkState "filename" (mkMemory rom)
   runEmulator window (state, U.replicate 10 1)
 
-runEmulator :: Window -> GameState -> IO()
+runEmulator :: MonadIO m => Window -> GameState -> m ()
 runEmulator window gameState@(currentState, buffer) = do
   events <- pollEvents
   let eventIsQPress event = case eventPayload event of
