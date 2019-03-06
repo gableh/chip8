@@ -33,6 +33,7 @@ dependencies:
 - vector
 - bitwise
 - random
+- text
 library:
   source-dirs: src
 

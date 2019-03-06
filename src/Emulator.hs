@@ -8,19 +8,20 @@ import Control.Monad
 import Control.Monad.IO.Class (MonadIO)
 import           SDL
 import System.Random
+import qualified Data.Char as C
 import qualified Data.ByteString.Lazy        as B
 import           EmuState
 import           Utils                       (getOpcode)
-import Constants ()
+import Constants (hexcodes)
 import qualified Data.Vector.Unboxed as U
 import Instructions
 
-startEmulator :: MonadIO m => Window -> B.ByteString -> m ()
+startEmulator ::  Window -> B.ByteString ->IO()
 startEmulator window rom = do
   let state = mkState "filename" (mkMemory rom)
   runEmulator window (state, U.replicate 10 1)
 
-runEmulator :: MonadIO m => Window -> GameState -> m ()
+runEmulator :: Window -> GameState -> IO()
 runEmulator window gameState@(currentState, buffer) = do
   events <- pollEvents
   let eventIsQPress event = case eventPayload event of
@@ -29,16 +30,18 @@ runEmulator window gameState@(currentState, buffer) = do
               keysymKeycode (keyboardEventKeysym keyboardEvent) == KeycodeQ
           _ -> False
       qPressed = any eventIsQPress events
+  print $ B.length (memory currentState)
   let opcode = getOpcode (pc currentState) (memory currentState)
   let nextGameState = runCPU opcode gameState
-  unless qPressed (runEmulator window gameState)
+  print opcode
+  unless qPressed (runEmulator window nextGameState)
 
 runCPU :: String -> GameState -> GameState
 runCPU opcode gameState@(currentState, buffer) =
   runST $
-  case opcode of
-    "00E0"        -> clearDisplay gameState
-    "00EE"        -> returnFromSubRoutine gameState
+  case map C.toUpper opcode of
+    "E0"        -> clearDisplay gameState
+    "EE"        -> returnFromSubRoutine gameState
     '1':xs        -> jumpToAddr xs gameState
     '2':xs        -> callSubroutine xs gameState
     '3':(x:byteH) -> skipNextInstructionIfEqual x byteH gameState
@@ -59,4 +62,5 @@ runCPU opcode gameState@(currentState, buffer) =
     'A':byteH -> setRegisterI byteH gameState
     'B':byteH -> jumpWithV0 byteH gameState
     'C':x:kk -> setRandomVx x kk gameState
+    _ -> error "fsd"
 
