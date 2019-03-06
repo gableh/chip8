@@ -12,7 +12,6 @@ import qualified Data.Char as C
 import qualified Data.ByteString.Lazy        as B
 import           EmuState
 import           Utils                       (getOpcode)
-import Constants (hexcodes)
 import qualified Data.Vector.Unboxed as U
 import Instructions
 
@@ -30,10 +29,8 @@ runEmulator window gameState@(currentState, buffer) = do
               keysymKeycode (keyboardEventKeysym keyboardEvent) == KeycodeQ
           _ -> False
       qPressed = any eventIsQPress events
-  print $ B.length (memory currentState)
   let opcode = getOpcode (pc currentState) (memory currentState)
   let nextGameState = runCPU opcode gameState
-  print opcode
   unless qPressed (runEmulator window nextGameState)
 
 runCPU :: String -> GameState -> GameState
