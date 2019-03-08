@@ -14,14 +14,16 @@ import           EmuState
 import           Utils                       (getOpcode)
 import qualified Data.Vector.Unboxed as U
 import Instructions
+import Graphics
+import Foreign.C.Types (CInt)
 
-startEmulator :: MonadIO m => Window -> B.ByteString -> m ()
-startEmulator window rom = do
+startEmulator :: MonadIO m => Renderer -> B.ByteString -> m ()
+startEmulator renderer rom = do
   let state = mkState "filename" (mkMemory rom)
-  runEmulator window (state, U.replicate 10 1)
+  runEmulator renderer (state, U.replicate (fromIntegral (chipHeight * chipWidth) :: Int) 1)
 
-runEmulator :: MonadIO m => Window -> GameState -> m ()
-runEmulator window gameState@(currentState, buffer) = do
+runEmulator :: MonadIO m => Renderer -> GameState -> m ()
+runEmulator renderer gameState@(currentState, buffer) = do
   events <- pollEvents
   let eventIsQPress event = case eventPayload event of
           KeyboardEvent keyboardEvent ->
@@ -30,8 +32,9 @@ runEmulator window gameState@(currentState, buffer) = do
           _ -> False
       qPressed = any eventIsQPress events
   let opcode = getOpcode (pc currentState) (memory currentState)
+  liftIO $ print opcode
   let nextGameState = runCPU opcode gameState
-  unless qPressed (runEmulator window nextGameState)
+  unless qPressed (runEmulator renderer nextGameState)
 
 runCPU :: String -> GameState -> GameState
 runCPU opcode gameState@(currentState, buffer) =

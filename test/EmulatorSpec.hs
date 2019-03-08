@@ -27,11 +27,11 @@ spec :: Spec
 spec =
   describe "runCPU" $ do
     describe "00E0 - Clear the display" $ do
-      let (resultState, resultBuffer) = runCPU "00E0" (initialState, U.replicate 10 1)
+      let (resultState, resultBuffer) = runCPU "E0" (initialState, U.replicate 10 1)
       it "should clear the display" $ resultBuffer `shouldBe` U.replicate 10 0
       it "should advance the pc by 2" $ pc resultState `shouldBe` pc initialState + 2
     describe "00EE - Return from subroutine" $ do
-      let (resultState, _) = runCPU "00EE" (initialState, U.replicate 10 1)
+      let (resultState, _) = runCPU "EE" (initialState, U.replicate 10 1)
       it "should set the program counter to the address at the top of the stack + 2" $ pc resultState `shouldBe` 402
       it "should decrease stack pointer by 1" $ sp resultState `shouldBe` 1
     describe "1nnn - Jump to location nnn" $ do
