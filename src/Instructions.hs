@@ -51,7 +51,7 @@ xorBuffer buffer bitArray x y = do
     U.foldM
       (\initial (index, x) -> do
          let bufferX = (U.!) buffer index
-         let newX = (.|.) bufferX x
+         let newX = xor bufferX x
          M.write bufferM index newX
          if newX == 0 && bufferX == 1
            then return (1 :: Word8)
@@ -250,14 +250,14 @@ callSubroutine addrH (currentState, buffer) = do
   stackM <- U.thaw (stack currentState)
   M.write stackM nextSp (pc currentState)
   nextStack <- U.freeze stackM
-  let nextPc = fromHex addrH + 2
+  let nextPc = fromHex addrH
   let nextState = currentState {pc = nextPc, sp = nextSp, stack = nextStack}
   return (nextState, buffer)
 
 jumpToAddr :: String -> GameState -> ST s GameState
 jumpToAddr addrH (currentState, buffer) = do
   let addrI64 :: Int64 = fromHex addrH
-  let nextState = currentState {pc = addrI64 + 2}
+  let nextState = currentState {pc = addrI64}
   return (nextState, buffer)
 
 jumpWithV0 :: String -> GameState -> ST s GameState
@@ -265,7 +265,7 @@ jumpWithV0 addrH (currentState, buffer) = do
   let addrI64 :: Int64 = fromHex addrH
   let currentRegister = register currentState
   let nextPc = (fromIntegral $ (U.!) currentRegister 0) + addrI64
-  let nextState = currentState {pc = nextPc + 2}
+  let nextState = currentState {pc = nextPc}
   return (nextState, buffer)
 
 returnFromSubRoutine :: GameState -> ST s GameState

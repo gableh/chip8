@@ -38,13 +38,13 @@ spec =
       it "should decrease stack pointer by 1" $ sp resultState `shouldBe` 1
     describe "1nnn - Jump to location nnn" $ do
       let (resultState, _) = runCPU "1ABC" (initialState, U.replicate 10 1)
-      it "should set the program counter to 0xABC + 2" $ pc resultState `shouldBe` 2748 + 2
+      it "should set the program counter to 0xABC" $ pc resultState `shouldBe` 2748
     describe "2nnn - Call subroutine at nnn" $ do
       let (resultState, _) = runCPU "2ABC" (initialState, U.replicate 10 1)
       it "should increment the stack pointer" $ sp resultState `shouldBe` sp initialState + 1
       it "should set the current pc to the top of the stack" $
         (U.!) (stack resultState) (sp resultState) `shouldBe` pc initialState
-      it "should set the current pc to be NNN + 2" $ pc resultState `shouldBe` 2748 + 2
+      it "should set the current pc to be NNN" $ pc resultState `shouldBe` 2748
     describe "3xkk - Skip next instruction if Vx = kk" $ do
       describe "Vx == kk" $ do
         let newRegister = U.replicate 16 255
@@ -226,7 +226,7 @@ spec =
     describe "Bnnn - JP V0, addr" $ do
       let newRegister = U.replicate 16 140
       let (resultState, _) = runCPU "BFFF" (initialState {register = newRegister}, U.replicate 10 1)
-      it "should set the next pc to be V0 + nnn + 2" $ pc resultState `shouldBe` 4237
+      it "should set the next pc to be V0 + nnn" $ pc resultState `shouldBe` 4235
     describe "Cxkk - RND Vx, byte" $ do
       let (resultState, _) = runCPU "CABC" (initialState, U.replicate 10 1)
       let resultRegister = register resultState
