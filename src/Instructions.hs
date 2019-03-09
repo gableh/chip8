@@ -15,7 +15,7 @@ import qualified Data.Vector.Unboxed         as U
 import           Data.Word
 import           EmuState
 import           Graphics
-import           Utils                       (fromHex, toBits)
+import           Utils                       (fromHex, toBits, getGenericNfromMem)
 
 drawBuffer :: Char -> Char -> Char -> GameState -> ST s GameState
 drawBuffer xH yH nH (currentState, buffer) = do
@@ -26,9 +26,9 @@ drawBuffer xH yH nH (currentState, buffer) = do
   let vx :: Int = fromIntegral $ (U.!) currentRegister x
   let vy :: Int = fromIntegral $ (U.!) currentRegister y
   let startI = fromIntegral (i currentState) :: Int64
-  let bytes = take n $ drop (fromIntegral startI - 1) (B.unpack $ memory currentState)
---  let bytes = B.unpack byteString
-  let bitArray = zip (map toBits bytes) [0 .. n-1]
+  let startN = fromIntegral n :: Int64
+  let bytes = B.unpack $ getGenericNfromMem startI (startI + startN - 1) (memory currentState)
+  let bitArray = zip (map toBits bytes) [0 .. n]
   (nextBuffer, vF) <- xorBuffer buffer bitArray vx vy
   let currentRegister = register currentState
   registerM <- U.thaw currentRegister
