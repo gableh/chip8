@@ -1,19 +1,21 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+
 module Instructions where
 
-import Constants
-import EmuState
-import Control.Monad (foldM)
-import Control.Monad.Primitive
+import           Constants
+import           Control.Monad               (foldM)
+import           Control.Monad.Primitive
+import Control.Monad.IO.Class
 import           Control.Monad.ST
-import qualified Data.Vector.Unboxed as U
-import qualified Data.Vector.Generic.Mutable as M
-import Data.Word
-import Data.Int
-import qualified Data.ByteString.Lazy as B
 import           Data.Bits
+import qualified Data.ByteString.Lazy        as B
+import           Data.Int
+import qualified Data.Vector.Generic.Mutable as M
+import qualified Data.Vector.Unboxed         as U
+import           Data.Word
+import           EmuState
+import           Graphics
 import           Utils                       (fromHex, toBits)
-import Graphics
 
 drawBuffer :: Char -> Char -> Char -> GameState -> ST s GameState
 drawBuffer xH yH nH (currentState, buffer) = do
@@ -21,13 +23,12 @@ drawBuffer xH yH nH (currentState, buffer) = do
   let y = fromHex [yH]
   let n = fromHex [nH]
   let currentRegister = register currentState
-  let vx::Int = fromIntegral $ (U.!) currentRegister x
-  let vy::Int = fromIntegral $ (U.!) currentRegister y
-
+  let vx :: Int = fromIntegral $ (U.!) currentRegister x
+  let vy :: Int = fromIntegral $ (U.!) currentRegister y
   let startI = fromIntegral (i currentState) :: Int64
-  let byteString = B.take (fromIntegral n) $ B.drop (startI-1) (memory currentState)
-  let bytes = B.unpack byteString
-  let bitArray = zip (map toBits bytes) [0..n]
+  let bytes = take n $ drop (fromIntegral startI - 1) (B.unpack $ memory currentState)
+--  let bytes = B.unpack byteString
+  let bitArray = zip (map toBits bytes) [0 .. n-1]
   (nextBuffer, vF) <- xorBuffer buffer bitArray vx vy
   let currentRegister = register currentState
   registerM <- U.thaw currentRegister
@@ -50,7 +51,7 @@ xorBuffer buffer bitArray x y = do
     U.foldM
       (\initial (index, x) -> do
          let bufferX = (U.!) buffer index
-         let newX = xor bufferX x
+         let newX = (.|.) bufferX x
          M.write bufferM index newX
          if newX == 0 && bufferX == 1
            then return (1 :: Word8)
@@ -59,7 +60,6 @@ xorBuffer buffer bitArray x y = do
       nextUpdateV
   nextBuffer <- U.freeze bufferM
   return (nextBuffer, vF)
-
 
 -- TODO figure out how to implement random
 setRandomVx :: Char -> String -> GameState -> ST s GameState
@@ -79,7 +79,7 @@ setRegisterI :: String -> GameState -> ST s GameState
 setRegisterI byteH (currentState, buffer) = do
   let byte = fromHex byteH
   let nextState = currentState {i = byte, pc = pc currentState + 2}
-  return (nextState ,buffer)
+  return (nextState, buffer)
 
 subtractNRegisterWithRegister :: Char -> Char -> GameState -> ST s GameState
 subtractNRegisterWithRegister = opRegisterWithRegister (flip (-)) (flip getBorrowFlag)
@@ -96,7 +96,7 @@ shlRegister xH (currentState, buffer) = do
   M.write registerM x resultX
   nextRegister <- U.freeze registerM
   let nextState = currentState {register = nextRegister, pc = pc currentState + 2}
-  return (nextState ,buffer)
+  return (nextState, buffer)
 
 shlFlagOp :: Word8 -> Word8
 shlFlagOp vx = shiftR vx 7
@@ -113,7 +113,7 @@ shrRegister xH (currentState, buffer) = do
   M.write registerM x resultX
   nextRegister <- U.freeze registerM
   let nextState = currentState {register = nextRegister, pc = pc currentState + 2}
-  return (nextState ,buffer)
+  return (nextState, buffer)
 
 shrFlagOp :: Word8 -> Word8
 shrFlagOp vx = vx .&. 1
@@ -132,13 +132,16 @@ opRegisterWithRegister op flagOp xH yH (currentState, buffer) = do
   M.write registerM 15 flag
   nextRegister <- U.freeze registerM
   let nextState = currentState {register = nextRegister, pc = pc currentState + 2}
-  return (nextState ,buffer)
+  return (nextState, buffer)
 
 subtractRegisterWithRegister :: Char -> Char -> GameState -> ST s GameState
 subtractRegisterWithRegister = opRegisterWithRegister (-) getBorrowFlag
 
 getBorrowFlag :: (Ord a, Num p) => a -> a -> p
-getBorrowFlag vx vy = if vx > vy then 1 else 0
+getBorrowFlag vx vy =
+  if vx > vy
+    then 1
+    else 0
 
 addRegisterWithRegister :: Char -> Char -> GameState -> ST s GameState
 addRegisterWithRegister = opRegisterWithRegister (+) getCarryFlag
@@ -147,7 +150,9 @@ getCarryFlag :: (Integral a, Num p) => a -> a -> p
 getCarryFlag vx vy = do
   let x = fromIntegral vx
   let y = fromIntegral vy
-  if x + y > 255 then 1 else 0
+  if x + y > 255
+    then 1
+    else 0
 
 xorRegisterWithRegister :: Char -> Char -> GameState -> ST s GameState
 xorRegisterWithRegister = bitwiseRegisterWithRegister xor
@@ -157,7 +162,6 @@ andRegisterWithRegister = bitwiseRegisterWithRegister (.&.)
 
 orRegisterWithRegister :: Char -> Char -> GameState -> ST s GameState
 orRegisterWithRegister = bitwiseRegisterWithRegister (.|.)
-
 
 bitwiseRegisterWithRegister :: Word8Op -> Char -> Char -> GameState -> ST s GameState
 bitwiseRegisterWithRegister bitOp xH yH (currentState, buffer) = do
@@ -171,7 +175,7 @@ bitwiseRegisterWithRegister bitOp xH yH (currentState, buffer) = do
   M.write registerM x resultX
   nextRegister <- U.freeze registerM
   let nextState = currentState {register = nextRegister, pc = pc currentState + 2}
-  return (nextState ,buffer)
+  return (nextState, buffer)
 
 setRegisterWithRegister :: Char -> Char -> GameState -> ST s GameState
 setRegisterWithRegister xH yH (currentState, buffer) = do
@@ -182,7 +186,7 @@ setRegisterWithRegister xH yH (currentState, buffer) = do
   M.write registerM x ((U.!) currentRegister y)
   nextRegister <- U.freeze registerM
   let nextState = currentState {register = nextRegister, pc = pc currentState + 2}
-  return (nextState ,buffer)
+  return (nextState, buffer)
 
 addRegister :: Char -> String -> GameState -> ST s GameState
 addRegister xH byteH (currentState, buffer) = do
@@ -194,7 +198,7 @@ addRegister xH byteH (currentState, buffer) = do
   M.write registerM x (byte + currentRegisterXValue)
   nextRegister <- U.freeze registerM
   let nextState = currentState {register = nextRegister, pc = pc currentState + 2}
-  return (nextState ,buffer)
+  return (nextState, buffer)
 
 setRegisterWithByte :: Char -> String -> GameState -> ST s GameState
 setRegisterWithByte xH byteH (currentState, buffer) = do
@@ -205,17 +209,16 @@ setRegisterWithByte xH byteH (currentState, buffer) = do
   M.write registerM x byte
   nextRegister <- U.freeze registerM
   let nextState = currentState {register = nextRegister, pc = pc currentState + 2}
-  return (nextState ,buffer)
-
+  return (nextState, buffer)
 
 skipNextInstructionIfRegistersOp :: (Word8 -> Word8 -> Bool) -> Char -> Char -> GameState -> ST s GameState
 skipNextInstructionIfRegistersOp op xH yH (currentState, buffer) = do
-   let y = fromHex [yH]
-   let x = fromHex [xH]
-   let currentRegister = register currentState
-   if (U.!) currentRegister x `op` (U.!) currentRegister y
-     then return (currentState {pc = pc currentState + 4}, buffer)
-     else return (currentState {pc = pc currentState + 2}, buffer)
+  let y = fromHex [yH]
+  let x = fromHex [xH]
+  let currentRegister = register currentState
+  if (U.!) currentRegister x `op` (U.!) currentRegister y
+    then return (currentState {pc = pc currentState + 4}, buffer)
+    else return (currentState {pc = pc currentState + 2}, buffer)
 
 skipNextInstructionIfRegistersEqual :: Char -> Char -> GameState -> ST s GameState
 skipNextInstructionIfRegistersEqual = skipNextInstructionIfRegistersOp (==)
@@ -248,35 +251,32 @@ callSubroutine addrH (currentState, buffer) = do
   M.write stackM nextSp (pc currentState)
   nextStack <- U.freeze stackM
   let nextPc = fromHex addrH + 2
-  let nextState = currentState { pc = nextPc, sp = nextSp, stack = nextStack }
+  let nextState = currentState {pc = nextPc, sp = nextSp, stack = nextStack}
   return (nextState, buffer)
 
 jumpToAddr :: String -> GameState -> ST s GameState
 jumpToAddr addrH (currentState, buffer) = do
-  let addrI64::Int64 = fromHex addrH
-  let nextState = currentState { pc = addrI64 + 2 }
+  let addrI64 :: Int64 = fromHex addrH
+  let nextState = currentState {pc = addrI64 + 2}
   return (nextState, buffer)
 
 jumpWithV0 :: String -> GameState -> ST s GameState
 jumpWithV0 addrH (currentState, buffer) = do
-  let addrI64::Int64 = fromHex addrH
+  let addrI64 :: Int64 = fromHex addrH
   let currentRegister = register currentState
   let nextPc = (fromIntegral $ (U.!) currentRegister 0) + addrI64
-  let nextState = currentState { pc = nextPc + 2 }
+  let nextState = currentState {pc = nextPc + 2}
   return (nextState, buffer)
 
 returnFromSubRoutine :: GameState -> ST s GameState
 returnFromSubRoutine (currentState, buffer) = do
   let currentStack = stack currentState
   let currentSp = sp currentState
-  let nextState = currentState { pc = (U.!) currentStack currentSp + 2, sp = currentSp - 1}
+  let nextState = currentState {pc = (U.!) currentStack currentSp + 2, sp = currentSp - 1}
   return (nextState, buffer)
 
 clearDisplay :: GameState -> ST s GameState
 clearDisplay (currentState, buffer) =
   return (currentState {pc = pc currentState + 2}, U.replicate (U.length buffer) 0 :: U.Vector Word8)
   -- bufferM <- U.thaw buffer
-
   -- U.unsafeFreeze buffer
-
-

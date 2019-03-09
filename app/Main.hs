@@ -10,10 +10,10 @@ import Emulator
 
 main :: IO ()
 main = do
-    let filename = "./roms/games/Bowling [Gooitzen van der Wal].ch8"
+    let filename = "./roms/programs/Chip8 Picture.ch8"
     initializeAll
     window <- createWindow "My SDL Application" defaultWindow {
-        windowInitialSize = V2 screenHeight screenWidth
+        windowInitialSize = V2 screenWidth screenHeight
     }
     renderer <- createRenderer window (-1) defaultRenderer
 
