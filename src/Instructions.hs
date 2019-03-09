@@ -3,13 +3,63 @@ module Instructions where
 
 import Constants
 import EmuState
+import Control.Monad (foldM)
+import Control.Monad.Primitive
 import           Control.Monad.ST
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Generic.Mutable as M
 import Data.Word
 import Data.Int
+import qualified Data.ByteString.Lazy as B
 import           Data.Bits
-import           Utils                       (fromHex)
+import           Utils                       (fromHex, toBits)
+import Graphics
+
+drawBuffer :: Char -> Char -> Char -> GameState -> ST s GameState
+drawBuffer xH yH nH (currentState, buffer) = do
+  let x = fromHex [xH]
+  let y = fromHex [yH]
+  let n = fromHex [nH]
+  let currentRegister = register currentState
+  let vx::Int = fromIntegral $ (U.!) currentRegister x
+  let vy::Int = fromIntegral $ (U.!) currentRegister y
+
+  let startI = fromIntegral (i currentState) :: Int64
+  let byteString = B.take (fromIntegral n) $ B.drop (startI-1) (memory currentState)
+  let bytes = B.unpack byteString
+  let bitArray = zip (map toBits bytes) [0..n]
+  (nextBuffer, vF) <- xorBuffer buffer bitArray vx vy
+  let currentRegister = register currentState
+  registerM <- U.thaw currentRegister
+  M.write registerM 15 vF
+  nextRegister <- U.freeze registerM
+  let nextState = currentState {pc = pc currentState + 2, register = nextRegister}
+  return (nextState, nextBuffer)
+
+xorBuffer :: PrimMonad m => U.Vector Word8 -> [([Word8], Int)] -> Int -> Int -> m (U.Vector Word8, Word8)
+xorBuffer buffer bitArray x y = do
+  let nextUpdate =
+        foldl
+          (\initial (bits, index) ->
+             initial ++ zip [(intChipWidth * (y + index) + x) .. (intChipWidth * (y + index) + x + length bits)] bits)
+          []
+          bitArray
+  let nextUpdateV = U.generate (length nextUpdate) (\x -> nextUpdate !! x)
+  bufferM <- U.thaw buffer
+  vF <-
+    U.foldM
+      (\initial (index, x) -> do
+         let bufferX = (U.!) buffer index
+         let newX = xor bufferX x
+         M.write bufferM index newX
+         if newX == 0 && bufferX == 1
+           then return (1 :: Word8)
+           else return initial)
+      (0 :: Word8)
+      nextUpdateV
+  nextBuffer <- U.freeze bufferM
+  return (nextBuffer, vF)
+
 
 -- TODO figure out how to implement random
 setRandomVx :: Char -> String -> GameState -> ST s GameState

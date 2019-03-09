@@ -62,5 +62,6 @@ runCPU opcode gameState@(currentState, buffer) =
     'A':byteH -> setRegisterI byteH gameState
     'B':byteH -> jumpWithV0 byteH gameState
     'C':x:kk -> setRandomVx x kk gameState
+    'D':x:y:[n]  -> drawBuffer x y n gameState
     _ -> error "fsd"
 
