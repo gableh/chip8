@@ -18,6 +18,16 @@ import           Graphics
 import           Utils                       (fromHex, getGenericNfromMem,
                                               toBits)
 
+loadVxDelayTimer :: Char -> GameState -> ST s GameState
+loadVxDelayTimer xH (currentState, buffer) = do
+  let x = fromHex [xH]
+  let currentRegister = register currentState
+  registerM <- U.thaw currentRegister
+  M.write registerM x (delayTimer currentState)
+  nextRegister <- U.freeze registerM
+  let nextState = currentState {pc = pc currentState + 2, register = nextRegister}
+  return (nextState, buffer)
+
 skipNextInstructionIfKeyPressed :: Char -> GameState -> ST s GameState
 skipNextInstructionIfKeyPressed xH (currentState, buffer) = do
   let x = fromHex [xH]

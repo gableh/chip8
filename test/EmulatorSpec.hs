@@ -24,6 +24,7 @@ initialState =
     , register = U.replicate 16 0
     , i = 0
     , keycodes = []
+    , delayTimer = 0
     }
 
 spec :: Spec
@@ -247,10 +248,17 @@ spec =
       let (resultState, _) = runCPU "E09E" (initialState, U.replicate 10 1)
       it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
       let (resultState, _) = runCPU "E09E" (initialState {keycodes = [0]}, U.replicate 10 1)
-      it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 4
+      it "should set the next pc to be current pc + 4" $ pc resultState `shouldBe` pc initialState + 4
 
     describe "ExA1 - SKNP Vx" $ do
       let (resultState, _) = runCPU "E0A1" (initialState, U.replicate 10 1)
-      it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
+      it "should set the next pc to be current pc + 4" $ pc resultState `shouldBe` pc initialState + 4
       let (resultState, _) = runCPU "E0A1" (initialState {keycodes = [0]}, U.replicate 10 1)
-      it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 4
+      it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
+
+    describe "Fx07 - LD Vx, DT" $ do
+      let (resultState, _) = runCPU "F007" (initialState {delayTimer = 123}, U.replicate 10 1)
+      it "should set Vx to the delay timer value" $  do
+        let resultRegister = register resultState
+        (U.!) resultRegister 0 `shouldBe` 123
+      it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2

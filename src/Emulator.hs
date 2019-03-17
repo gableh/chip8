@@ -33,11 +33,14 @@ runEmulator renderer gameState@(currentState, buffer) = do
   let keycodes = maybe currentKeycodes (updateKeycodes currentKeycodes) event
   let qPressed = maybe False eventIsQPress event
   let opcode = getOpcode (pc currentState) (memory currentState)
+
   let nextGameState@(nextState, nextBuffer) = runCPU opcode (currentState {keycodes = currentKeycodes}, buffer)
+
   let pixels :: Vector Int = U.elemIndices 1 nextBuffer
   let rectangles = S.generate (U.length pixels) (getXYPixel . (U.!) pixels)
   fillRects renderer rectangles
   present renderer
+
   unless qPressed (runEmulator renderer nextGameState)
 
 updateKeycodes :: [Int] -> Event -> [Int]
@@ -92,5 +95,6 @@ runCPU opcode gameState@(currentState, buffer) =
     'D':x:y:[n] -> drawBuffer x y n gameState
     'E':x:"9E" -> skipNextInstructionIfKeyPressed x gameState
     'E':x:"A1" -> skipNextInstructionIfKeyNotPressed x gameState
+    'F':x:"07" -> loadVxDelayTimer x gameState
     _ -> return gameState
 
