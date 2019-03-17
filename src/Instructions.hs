@@ -18,6 +18,13 @@ import           Graphics
 import           Utils                       (fromHex, getGenericNfromMem,
                                               toBits)
 
+loadVxSpriteIntoI :: Char -> GameState -> ST s GameState
+loadVxSpriteIntoI xH (currentState, buffer) = do
+  let x = fromHex [xH]
+  let nextI = x * 5
+  let nextState = currentState {pc = pc currentState + 2, i = nextI}
+  return (nextState, buffer)
+
 addVxToI :: Char -> GameState -> ST s GameState
 addVxToI xH (currentState, buffer) = do
   let x = fromHex [xH]

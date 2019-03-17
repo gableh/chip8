@@ -292,3 +292,8 @@ spec =
         let iResult = i resultState
         iResult `shouldBe` 10
       it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
+
+    describe "Fx29 - LD F, Vx" $ do
+      let (resultState, _) = runCPU "F029" (initialState {i = 200}, U.replicate 10 1)
+      it "should set I to the location of sprite for digit Vx" $ i resultState `shouldBe` 0
+      it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
