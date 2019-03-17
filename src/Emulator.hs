@@ -99,5 +99,6 @@ runCPU opcode gameState@(currentState, buffer) =
     'F':x:"07" -> loadVxDelayTimer x gameState
     'F':x:"15" -> loadDelayVxTimer x gameState
     'F':x:"0A" -> loadVxKeyboard x gameState
+    'F':x:"18" -> loadSoundVxTimer x gameState
     _ -> return gameState
 

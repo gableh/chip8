@@ -25,6 +25,7 @@ initialState =
     , i = 0
     , keycodes = []
     , delayTimer = 0
+    , soundTimer = 0
     }
 
 spec :: Spec
@@ -278,3 +279,8 @@ spec =
           let resultRegister = register resultState
           (U.!) resultRegister 0 `shouldBe` 82
         it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
+
+    describe "Fx18 - LD ST, Vx" $ do
+      let (resultState, _) = runCPU "F018" (initialState {soundTimer = 123}, U.replicate 10 1)
+      it "should set sound timer to Vx" $ soundTimer resultState `shouldBe` 0
+      it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2

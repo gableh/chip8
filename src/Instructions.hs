@@ -18,6 +18,14 @@ import           Graphics
 import           Utils                       (fromHex, getGenericNfromMem,
                                               toBits)
 
+loadSoundVxTimer :: Char -> GameState -> ST s GameState
+loadSoundVxTimer xH (currentState, buffer) = do
+  let x = fromHex [xH]
+  let currentRegister = register currentState
+  let nextSoundTimer = (U.!) currentRegister x
+  let nextState = currentState {pc = pc currentState + 2, soundTimer = nextSoundTimer}
+  return (nextState, buffer)
+
 loadVxKeyboard :: Char -> GameState -> ST s GameState
 loadVxKeyboard xH (currentState, buffer) =
   case keycodes currentState of
