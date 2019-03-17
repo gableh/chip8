@@ -38,6 +38,17 @@ storeVx3IntoMemoryI xH (currentState, buffer) = do
   let nextState = currentState {pc = pc currentState + 2, memory = B.fromStrict finalMemory}
   return (nextState, buffer)
 
+storeVxNIntoMemoryI :: Char -> GameState -> ST s GameState
+storeVxNIntoMemoryI nH (currentState, buffer) = do
+  let n = fromHex [nH]
+  let currentRegister = register currentState
+  let vN = U.take n currentRegister
+  let currentI = i currentState
+  let currentMemory = B.toStrict $ memory currentState
+  let nextMemory = U.ifoldl (\memory index value -> updateMemAt (currentI + (fromIntegral index)::Word16) value memory) currentMemory vN
+  let nextState = currentState {pc = pc currentState + 2, memory = B.fromStrict nextMemory}
+  return (nextState, buffer)
+
 addVxToI :: Char -> GameState -> ST s GameState
 addVxToI xH (currentState, buffer) = do
   let x = fromHex [xH]

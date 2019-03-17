@@ -103,5 +103,6 @@ runCPU opcode gameState@(currentState, buffer) =
     'F':x:"1E" -> addVxToI x gameState
     'F':x:"29" -> loadVxSpriteIntoI x gameState
     'F':x:"33" -> storeVx3IntoMemoryI x gameState
+    'F':x:"55" -> storeVxNIntoMemoryI x gameState
     _ -> return gameState
 
