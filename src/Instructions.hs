@@ -18,6 +18,19 @@ import           Graphics
 import           Utils                       (fromHex, getGenericNfromMem,
                                               toBits)
 
+loadVxKeyboard :: Char -> GameState -> ST s GameState
+loadVxKeyboard xH (currentState, buffer) =
+  case keycodes currentState of
+    [] -> return (currentState, buffer)
+    keycode:_ -> do
+      let x = fromHex [xH]
+      let currentRegister = register currentState
+      registerM <- U.thaw currentRegister
+      M.write registerM x keycode
+      nextRegister <- U.freeze registerM
+      let nextState = currentState {pc = pc currentState + 2, register = nextRegister}
+      return (nextState, buffer)
+
 loadDelayVxTimer :: Char -> GameState -> ST s GameState
 loadDelayVxTimer xH (currentState, buffer) = do
   let x = fromHex [xH]
@@ -60,8 +73,9 @@ skipNextInstructionIfKeyNotPressed xH (currentState, buffer) = do
                     else currentState {pc = pc currentState + 4}
   return (nextState, buffer)
 
+getVxKeyPressed :: Int -> U.Vector Word8 -> [Word8] -> Bool
 getVxKeyPressed x currentRegister currentKeycodes = do
-  let vx :: Int = fromIntegral $ (U.!) currentRegister x
+  let vx = (U.!) currentRegister x
   let vxKeyPressed = vx `elem` currentKeycodes
   vxKeyPressed
 

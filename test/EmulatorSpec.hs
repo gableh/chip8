@@ -267,3 +267,14 @@ spec =
       let (resultState, _) = runCPU "F015" (initialState {delayTimer = 123}, U.replicate 10 1)
       it "should set delay timer to Vx" $ delayTimer resultState `shouldBe` 0
       it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
+
+    describe "Fx0A - LD Vx, K" $ do
+      describe "No keycode pressed" $ do
+        let (resultState, _) = runCPU "F00A" (initialState, U.replicate 10 1)
+        it "should set the next pc to be current pc to stop execution" $ pc resultState `shouldBe` pc initialState
+      describe "Keycode pressed" $ do
+        let (resultState, _) = runCPU "F00A" (initialState {keycodes = [82]}, U.replicate 10 1)
+        it "should set register Vx to be the first keycode value" $ do
+          let resultRegister = register resultState
+          (U.!) resultRegister 0 `shouldBe` 82
+        it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2

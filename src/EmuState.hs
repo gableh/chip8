@@ -19,7 +19,7 @@ data EmuState = EmuState {
     stack::U.Vector Int64,
     register::U.Vector Word8,
     i::Word16,
-    keycodes::[Int],
+    keycodes::[Word8],
     delayTimer::Word8
 } deriving (Show, Eq)
 

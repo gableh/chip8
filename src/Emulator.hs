@@ -43,12 +43,13 @@ runEmulator renderer gameState@(currentState, buffer) = do
 
   unless qPressed (runEmulator renderer nextGameState)
 
-updateKeycodes :: [Int] -> Event -> [Int]
+updateKeycodes :: [Word8] -> Event -> [Word8]
 updateKeycodes currentKeycodes event =
   case eventPayload event of
     KeyboardEvent keyboardEvent ->
       case keyboardEventKeyMotion keyboardEvent of
-        Pressed -> fromIntegral (unwrapKeycode (keysymKeycode (keyboardEventKeysym keyboardEvent))) : currentKeycodes
+        Pressed ->
+          (fromIntegral (unwrapKeycode (keysymKeycode (keyboardEventKeysym keyboardEvent))) :: Word8) : currentKeycodes
         Released ->
           filter ((fromIntegral $ unwrapKeycode $ keysymKeycode (keyboardEventKeysym keyboardEvent)) /=) currentKeycodes
     _ -> currentKeycodes
@@ -97,5 +98,6 @@ runCPU opcode gameState@(currentState, buffer) =
     'E':x:"A1" -> skipNextInstructionIfKeyNotPressed x gameState
     'F':x:"07" -> loadVxDelayTimer x gameState
     'F':x:"15" -> loadDelayVxTimer x gameState
+    'F':x:"0A" -> loadVxKeyboard x gameState
     _ -> return gameState
 
