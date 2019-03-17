@@ -28,4 +28,6 @@ mkState :: String -> B.ByteString -> EmuState
 mkState filename rom = EmuState filename rom 512 0 (U.replicate 12 0) (U.replicate 16 0) 0 [] 0 0
 
 mkMemory :: B.ByteString -> B.ByteString
-mkMemory rom = B.append (B.pack hexcodes) $ B.append (B.replicate 432 0) rom
+mkMemory rom = do
+  let memory = B.append (B.pack hexcodes) $ B.append (B.replicate 432 0) rom
+  B.append memory (B.replicate (4096 - B.length memory) 0)

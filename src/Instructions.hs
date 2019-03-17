@@ -17,7 +17,13 @@ import           Data.Word
 import           EmuState
 import           Graphics
 import           Utils                       (fromHex, getGenericNfromMem,
-                                              toBits)
+                                              toBits, updateMemAt)
+loadVxSpriteIntoI :: Char -> GameState -> ST s GameState
+loadVxSpriteIntoI xH (currentState, buffer) = do
+  let x = fromHex [xH]
+  let nextI = x * 5
+  let nextState = currentState {pc = pc currentState + 2, i = nextI}
+  return (nextState, buffer)
 
 storeVx3IntoMemoryI :: Char -> GameState -> ST s GameState
 storeVx3IntoMemoryI xH (currentState, buffer) = do
@@ -26,18 +32,10 @@ storeVx3IntoMemoryI xH (currentState, buffer) = do
   let vx = (U.!) currentRegister x
   let currentI = i currentState
   let currentMemory = memory currentState
-  let nextMemory = updateMemAt currentI (vx/100) currentMemory
-  nextMemory = updateMemAt (currentI+1) ((vx/10) % 10) nextMemory
-  nextMemory = updateMemAt (currentI+2) ((vx%100) % 10) nextMemory
-  let nextState = currentState {pc = pc currentState + 2, memory = nextMemory}
-  return (nextState, buffer)
-
-
-loadVxSpriteIntoI :: Char -> GameState -> ST s GameState
-loadVxSpriteIntoI xH (currentState, buffer) = do
-  let x = fromHex [xH]
-  let nextI = x * 5
-  let nextState = currentState {pc = pc currentState + 2, i = nextI}
+  let nextMemory = updateMemAt currentI (vx `div` 100)  (B.toStrict currentMemory)
+  let nextMemory1 = updateMemAt (currentI+1) ((vx `div` 10) `mod` 10) nextMemory
+  let finalMemory = updateMemAt (currentI+2) ((vx `mod` 100) `mod` 10) nextMemory1
+  let nextState = currentState {pc = pc currentState + 2, memory = B.fromStrict finalMemory}
   return (nextState, buffer)
 
 addVxToI :: Char -> GameState -> ST s GameState

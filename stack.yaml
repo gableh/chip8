@@ -55,6 +55,7 @@ extra-deps: [
   random-1.1,
   text-1.2.3.1,
   primitive-0.6.4.0,
+  spool-0.1,
 ]
 
 # Override default flag values for local packages and extra-deps
