@@ -49,6 +49,19 @@ storeVxNIntoMemoryI nH (currentState, buffer) = do
   let nextState = currentState {pc = pc currentState + 2, memory = B.fromStrict nextMemory}
   return (nextState, buffer)
 
+
+loadMemoryIIntoVxN:: Char -> GameState -> ST s GameState
+loadMemoryIIntoVxN nH (currentState, buffer) = do
+  let n::Int64 = fromIntegral $ fromHex [nH]
+  let currentRegister = register currentState
+  let currentI::Int64 = fromIntegral $ i currentState
+  let currentMemory = memory currentState
+  let updateBytes = B.unpack $ getGenericNfromMem currentI (currentI + n) currentMemory
+  let updateVector = U.zip (U.fromList [0..length updateBytes]) (U.fromList updateBytes)
+  let nextRegister = U.update currentRegister updateVector
+  let nextState = currentState {pc = pc currentState + 2, register = nextRegister}
+  return (nextState, buffer)
+
 addVxToI :: Char -> GameState -> ST s GameState
 addVxToI xH (currentState, buffer) = do
   let x = fromHex [xH]

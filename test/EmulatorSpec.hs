@@ -319,3 +319,14 @@ spec =
       it "should set memory[i+4] to be 5" $ B.index resultMemory 3004 `shouldBe` 5
       it "should not set memory[i+4] to be 6" $ B.index resultMemory 3005 `shouldBe` 0
       it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
+
+    describe "Fx65 - LD Vx, [I]" $ do
+      let (resultState, _) = runCPU "F565" (initialState {i=512, memory = mkMemory (B.pack [1,2,3,4,5])}, U.replicate 10 1)
+      let resultRegister = register resultState
+      it "should set register[0] to 1" $ (U.!) resultRegister 0 `shouldBe` 1
+      it "should set register[1] to 2" $ (U.!) resultRegister 1 `shouldBe` 2
+      it "should set register[2] to 3" $ (U.!) resultRegister 2 `shouldBe` 3
+      it "should set register[3] to 4" $ (U.!) resultRegister 3 `shouldBe` 4
+      it "should set register[4] to 5" $ (U.!) resultRegister 4 `shouldBe` 5
+      it "should not set register[5] to anything" $ (U.!) resultRegister 5 `shouldBe` 0
+      it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
