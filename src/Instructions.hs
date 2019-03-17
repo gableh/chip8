@@ -18,6 +18,14 @@ import           Graphics
 import           Utils                       (fromHex, getGenericNfromMem,
                                               toBits)
 
+loadDelayVxTimer :: Char -> GameState -> ST s GameState
+loadDelayVxTimer xH (currentState, buffer) = do
+  let x = fromHex [xH]
+  let currentRegister = register currentState
+  let nextDelayTimer = (U.!) currentRegister x
+  let nextState = currentState {pc = pc currentState + 2, delayTimer = nextDelayTimer}
+  return (nextState, buffer)
+
 loadVxDelayTimer :: Char -> GameState -> ST s GameState
 loadVxDelayTimer xH (currentState, buffer) = do
   let x = fromHex [xH]

@@ -262,3 +262,8 @@ spec =
         let resultRegister = register resultState
         (U.!) resultRegister 0 `shouldBe` 123
       it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
+
+    describe "Fx15 - LD DT, Vx" $ do
+      let (resultState, _) = runCPU "F015" (initialState {delayTimer = 123}, U.replicate 10 1)
+      it "should set delay timer to Vx" $ delayTimer resultState `shouldBe` 0
+      it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2

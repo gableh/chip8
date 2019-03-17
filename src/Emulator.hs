@@ -96,5 +96,6 @@ runCPU opcode gameState@(currentState, buffer) =
     'E':x:"9E" -> skipNextInstructionIfKeyPressed x gameState
     'E':x:"A1" -> skipNextInstructionIfKeyNotPressed x gameState
     'F':x:"07" -> loadVxDelayTimer x gameState
+    'F':x:"15" -> loadDelayVxTimer x gameState
     _ -> return gameState
 
