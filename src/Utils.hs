@@ -6,7 +6,9 @@ import qualified Data.ByteString.Lazy as B
 import Data.Binary.Get
 import Data.Bits
 import Data.Word
-
+import Data.Vector.Storable (modify)
+import Data.Vector.Storable.ByteString
+import Data.Vector.Storable.Mutable (write)
 fromHex :: (Eq a, Num a) => String -> a
 fromHex n = fst (head (readHex n))
 
@@ -16,7 +18,7 @@ getInstruction n memory = B.snoc (B.snoc B.empty (B.index memory (n))) (B.index 
 getGenericNfromMem :: Int64 -> Int64 -> B.ByteString -> B.ByteString
 getGenericNfromMem startN finishN memory =
   if finishN == startN
-    then (B.snoc B.empty (B.index memory (startN)))
+    then B.snoc B.empty (B.index memory startN)
     else B.snoc (getGenericNfromMem startN (finishN - 1) memory) (B.index memory finishN)
 
 getOpcode pc memory = do
@@ -24,3 +26,8 @@ getOpcode pc memory = do
   showHex (runGet getWord16be instruction) ""
 
 toBits x = reverse [if testBit x i then 1::Word8 else 0::Word8 | i <- [0.. finiteBitSize x - 1]]
+
+updateMemAt :: Int -> Word8 -> B.ByteString -> B.ByteString
+updateMemAt n x bytestring = vectorToByteString . modify inner . byteStringToVector
+  where
+    inner vector = write vector n x

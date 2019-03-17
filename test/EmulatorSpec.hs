@@ -4,6 +4,7 @@ module EmulatorSpec
   ( spec
   ) where
 
+import qualified Data.ByteString.Lazy as B
 import qualified Data.Vector.Unboxed as U
 import           Emulator
 import           EmuState
@@ -296,4 +297,13 @@ spec =
     describe "Fx29 - LD F, Vx" $ do
       let (resultState, _) = runCPU "F029" (initialState {i = 200}, U.replicate 10 1)
       it "should set I to the location of sprite for digit Vx" $ i resultState `shouldBe` 0
+      it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
+
+    describe "Fx33 - LD B, Vx" $ do
+      let newRegister = U.replicate 16 123
+      let (resultState, _) = runCPU "F033" (initialState {i=3000, register = newRegister}, U.replicate 10 1)
+      let resultMemory = memory resultState
+      it "should set memory[i] to be 1" $ B.index resultMemory 3000 `shouldBe` 1
+      it "should set memory[i+1] to be 2" $ B.index resultMemory 3001 `shouldBe` 2
+      it "should set memory[i+2] to be 3" $ B.index resultMemory 3002 `shouldBe` 3
       it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2

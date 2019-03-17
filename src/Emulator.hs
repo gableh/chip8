@@ -101,6 +101,6 @@ runCPU opcode gameState@(currentState, buffer) =
     'F':x:"0A" -> loadVxKeyboard x gameState
     'F':x:"18" -> loadSoundVxTimer x gameState
     'F':x:"1E" -> addVxToI x gameState
-    'F':x:"29" -> loadVxSpriteIntoI x gameState
+    'F':x:"29" -> loadVxSpriteIntoMemoryI x gameState
     _ -> return gameState
 

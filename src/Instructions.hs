@@ -7,6 +7,7 @@ import           Control.Monad               (foldM)
 import           Control.Monad.IO.Class
 import           Control.Monad.Primitive
 import           Control.Monad.ST
+import Control.Lens
 import           Data.Bits
 import qualified Data.ByteString.Lazy        as B
 import           Data.Int
@@ -17,6 +18,20 @@ import           EmuState
 import           Graphics
 import           Utils                       (fromHex, getGenericNfromMem,
                                               toBits)
+
+storeVx3IntoMemoryI :: Char -> GameState -> ST s GameState
+storeVx3IntoMemoryI xH (currentState, buffer) = do
+  let x = fromHex [xH]
+  let currentRegister = register currentState
+  let vx = (U.!) currentRegister x
+  let currentI = i currentState
+  let currentMemory = memory currentState
+  let nextMemory = updateMemAt currentI (vx/100) currentMemory
+  nextMemory = updateMemAt (currentI+1) ((vx/10) % 10) nextMemory
+  nextMemory = updateMemAt (currentI+2) ((vx%100) % 10) nextMemory
+  let nextState = currentState {pc = pc currentState + 2, memory = nextMemory}
+  return (nextState, buffer)
+
 
 loadVxSpriteIntoI :: Char -> GameState -> ST s GameState
 loadVxSpriteIntoI xH (currentState, buffer) = do
