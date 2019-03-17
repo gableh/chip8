@@ -3,7 +3,7 @@
 module EmuState where
 
 import qualified Data.ByteString.Lazy as B
-
+import SDL
 import Constants
 import Data.Int
 import Data.Word (Word8, Word16)
@@ -18,11 +18,12 @@ data EmuState = EmuState {
     sp::Int,
     stack::U.Vector Int64,
     register::U.Vector Word8,
-    i::Word16
+    i::Word16,
+    keycodes::[Int]
 } deriving (Show, Eq)
 
 mkState :: String -> B.ByteString -> EmuState
-mkState filename rom = EmuState filename rom 512 0 (U.replicate 12 0) (U.replicate 16 0) 0
+mkState filename rom = EmuState filename rom 512 0 (U.replicate 12 0) (U.replicate 16 0) 0 []
 
 mkMemory :: B.ByteString -> B.ByteString
 mkMemory rom = B.append (B.pack hexcodes) $ B.append (B.replicate 432 0) rom

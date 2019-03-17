@@ -23,6 +23,7 @@ initialState =
     , stack = U.generate 12 (\x -> [3, 2, 400, 4, 5, 6, 7, 8, 9, 10, 22, 13] !! x)
     , register = U.replicate 16 0
     , i = 0
+    , keycodes = []
     }
 
 spec :: Spec
@@ -242,3 +243,14 @@ spec =
         let resultRegister = register nextResultState
         (U.!) resultRegister 15 `shouldBe` 1
 
+    describe "Ex9E - SKP Vx" $ do
+      let (resultState, _) = runCPU "E09E" (initialState, U.replicate 10 1)
+      it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
+      let (resultState, _) = runCPU "E09E" (initialState {keycodes = [0]}, U.replicate 10 1)
+      it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 4
+
+    describe "ExA1 - SKNP Vx" $ do
+      let (resultState, _) = runCPU "E0A1" (initialState, U.replicate 10 1)
+      it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
+      let (resultState, _) = runCPU "E0A1" (initialState {keycodes = [0]}, U.replicate 10 1)
+      it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 4

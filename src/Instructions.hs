@@ -4,8 +4,8 @@ module Instructions where
 
 import           Constants
 import           Control.Monad               (foldM)
+import           Control.Monad.IO.Class
 import           Control.Monad.Primitive
-import Control.Monad.IO.Class
 import           Control.Monad.ST
 import           Data.Bits
 import qualified Data.ByteString.Lazy        as B
@@ -15,7 +15,37 @@ import qualified Data.Vector.Unboxed         as U
 import           Data.Word
 import           EmuState
 import           Graphics
-import           Utils                       (fromHex, toBits, getGenericNfromMem)
+import           Utils                       (fromHex, getGenericNfromMem,
+                                              toBits)
+
+skipNextInstructionIfKeyPressed :: Char -> GameState -> ST s GameState
+skipNextInstructionIfKeyPressed xH (currentState, buffer) = do
+  let x = fromHex [xH]
+  let currentRegister = register currentState
+  let currentKeycodes = keycodes currentState
+
+  let vxKeyPressed = getVxKeyPressed x currentRegister currentKeycodes
+  let nextState = if vxKeyPressed
+                    then currentState {pc = pc currentState + 4}
+                    else currentState {pc = pc currentState + 2}
+  return (nextState, buffer)
+
+skipNextInstructionIfKeyNotPressed :: Char -> GameState -> ST s GameState
+skipNextInstructionIfKeyNotPressed xH (currentState, buffer) = do
+  let x = fromHex [xH]
+  let currentRegister = register currentState
+  let currentKeycodes = keycodes currentState
+
+  let vxKeyPressed = getVxKeyPressed x currentRegister currentKeycodes
+  let nextState = if vxKeyPressed
+                    then currentState {pc = pc currentState + 2}
+                    else currentState {pc = pc currentState + 4}
+  return (nextState, buffer)
+
+getVxKeyPressed x currentRegister currentKeycodes = do
+  let vx :: Int = fromIntegral $ (U.!) currentRegister x
+  let vxKeyPressed = vx `elem` currentKeycodes
+  vxKeyPressed
 
 drawBuffer :: Char -> Char -> Char -> GameState -> ST s GameState
 drawBuffer xH yH nH (currentState, buffer) = do
