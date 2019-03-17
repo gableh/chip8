@@ -18,6 +18,14 @@ import           Graphics
 import           Utils                       (fromHex, getGenericNfromMem,
                                               toBits)
 
+addVxToI :: Char -> GameState -> ST s GameState
+addVxToI xH (currentState, buffer) = do
+  let x = fromHex [xH]
+  let currentRegister = register currentState
+  let addI::Word16 = fromIntegral $ (U.!) currentRegister x
+  let nextState = currentState {pc = pc currentState + 2, i = i currentState + addI}
+  return (nextState, buffer)
+
 loadSoundVxTimer :: Char -> GameState -> ST s GameState
 loadSoundVxTimer xH (currentState, buffer) = do
   let x = fromHex [xH]

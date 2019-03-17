@@ -284,3 +284,11 @@ spec =
       let (resultState, _) = runCPU "F018" (initialState {soundTimer = 123}, U.replicate 10 1)
       it "should set sound timer to Vx" $ soundTimer resultState `shouldBe` 0
       it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
+
+    describe "Fx1E - ADD I, Vx" $ do
+      let newRegister = U.replicate 16 10
+      let (resultState, _) = runCPU "F01E" (initialState {register = newRegister}, U.replicate 10 1)
+      it "should set I to I + Vx" $ do
+        let iResult = i resultState
+        iResult `shouldBe` 10
+      it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
