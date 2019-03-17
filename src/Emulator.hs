@@ -24,7 +24,7 @@ import Utils (getOpcode)
 startEmulator :: MonadIO m => Renderer -> B.ByteString -> m ()
 startEmulator renderer rom = do
   let state = mkState "filename" (mkMemory rom)
-  runEmulator renderer (state, U.replicate (fromIntegral (chipHeight * chipWidth) :: Int) 1)
+  runEmulator renderer (state, U.replicate (fromIntegral (chipHeight * chipWidth) :: Int) 0)
 
 runEmulator :: MonadIO m => Renderer -> GameState -> m ()
 runEmulator renderer gameState@(currentState, buffer) = do
@@ -40,7 +40,8 @@ runEmulator renderer gameState@(currentState, buffer) = do
   let rectangles = S.generate (U.length pixels) (getXYPixel . (U.!) pixels)
   fillRects renderer rectangles
   present renderer
-
+  liftIO $ print opcode
+  delay 1000
   unless qPressed (runEmulator renderer nextGameState)
 
 updateKeycodes :: [Word8] -> Event -> [Word8]
@@ -105,5 +106,4 @@ runCPU opcode gameState@(currentState, buffer) =
     'F':x:"33" -> storeVx3IntoMemoryI x gameState
     'F':x:"55" -> storeVxNIntoMemoryI x gameState
     'F':x:"65" -> loadMemoryIIntoVxN x gameState
-    _ -> return gameState
 
