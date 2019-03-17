@@ -21,7 +21,10 @@ import           Utils                       (fromHex, getGenericNfromMem,
 loadVxSpriteIntoI :: Char -> GameState -> ST s GameState
 loadVxSpriteIntoI xH (currentState, buffer) = do
   let x = fromHex [xH]
-  let nextI = x * 5
+  let currentRegister = register currentState
+  let vx = (U.!) currentRegister x
+
+  let nextI::Word16 = fromIntegral $ vx * 5
   let nextState = currentState {pc = pc currentState + 2, i = nextI}
   return (nextState, buffer)
 
@@ -46,7 +49,7 @@ storeVxNIntoMemoryI nH (currentState, buffer) = do
   let currentI = i currentState
   let currentMemory = B.toStrict $ memory currentState
   let nextMemory = U.ifoldl (\memory index value -> updateMemAt (currentI + (fromIntegral index)::Word16) value memory) currentMemory vN
-  let nextState = currentState {pc = pc currentState + 2, memory = B.fromStrict nextMemory}
+  let nextState = currentState {pc = pc currentState + 2, memory = B.fromStrict nextMemory, i = i currentState + 1 + (fromIntegral n)::Word16}
   return (nextState, buffer)
 
 
@@ -59,7 +62,7 @@ loadMemoryIIntoVxN nH (currentState, buffer) = do
   let updateBytes = B.unpack $ getGenericNfromMem currentI (currentI + n) currentMemory
   let updateVector = U.zip (U.fromList [0..length updateBytes]) (U.fromList updateBytes)
   let nextRegister = U.update currentRegister updateVector
-  let nextState = currentState {pc = pc currentState + 2, register = nextRegister}
+  let nextState = currentState {pc = pc currentState + 2, register = nextRegister,i = (i currentState) + 1 + (fromIntegral n)::Word16}
   return (nextState, buffer)
 
 addVxToI :: Char -> GameState -> ST s GameState

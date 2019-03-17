@@ -41,7 +41,7 @@ runEmulator renderer gameState@(currentState, buffer) = do
   fillRects renderer rectangles
   present renderer
   liftIO $ print opcode
-  delay 1000
+  delay 17
   unless qPressed (runEmulator renderer nextGameState)
 
 updateKeycodes :: [Word8] -> Event -> [Word8]
