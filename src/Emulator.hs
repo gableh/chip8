@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
 module Emulator where
 
@@ -34,7 +35,7 @@ runEmulator renderer gameState@(currentState, buffer) = do
   let qPressed = maybe False eventIsQPress event
   let opcode = getOpcode (pc currentState) (memory currentState)
 
-  let nextGameState@(nextState, nextBuffer) = runCPU opcode (currentState {keycodes = currentKeycodes}, buffer)
+  let nextGameState@(nextState, nextBuffer) = runCPU opcode (currentState {keycodes}, buffer)
 
   let pixels :: Vector Int = U.elemIndices 1 nextBuffer
   let rectangles = S.generate (U.length pixels) (getXYPixel . (U.!) pixels)
