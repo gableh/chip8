@@ -31,4 +31,4 @@ toBits x = reverse [if testBit x i then 1::Word8 else 0::Word8 | i <- [0.. finit
 updateMemAt :: Word16 -> Word8 -> ByteString -> ByteString
 updateMemAt n x = vectorToByteString . modify inner . byteStringToVector
   where
-    inner vector = write vector (fromIntegral n)::Int x
+    inner vector = write vector (fromIntegral n) x

@@ -36,6 +36,7 @@ dependencies:
 - text
 - primitive
 - spool
+- containers
 
 library:
   source-dirs: src

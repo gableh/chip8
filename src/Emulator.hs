@@ -7,10 +7,12 @@ module Emulator where
 import Control.Monad
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Control.Monad.ST
+import Control.Monad.Trans.Class (lift)
 import qualified Data.ByteString.Lazy as B
 import qualified Data.Char as C
 import Data.Maybe
 import Data.Int
+import qualified Data.Map.Strict as M
 import qualified Data.Vector.Storable as S
 import qualified Data.Vector.Unboxed as U
 import Data.Word
@@ -19,6 +21,7 @@ import Foreign.C.Types (CInt)
 import Graphics
 import Instructions
 import SDL
+import Constants
 import System.Random
 import Utils (getOpcode)
 
@@ -29,6 +32,10 @@ startEmulator renderer rom = do
 
 runEmulator :: MonadIO m => Renderer -> GameState -> m ()
 runEmulator renderer gameState@(currentState, buffer) = do
+  let rendererColor = rendererDrawColor renderer
+  rendererColor $= V4 0 0 0 0
+  clear renderer
+  rendererColor $= V4 255 255 255 0
   event <- pollEvent
   let currentKeycodes = keycodes currentState
   let keycodes = maybe currentKeycodes (updateKeycodes currentKeycodes) event
@@ -41,8 +48,9 @@ runEmulator renderer gameState@(currentState, buffer) = do
   let rectangles = S.generate (U.length pixels) (getXYPixel . (U.!) pixels)
   fillRects renderer rectangles
   present renderer
+  liftIO $ print keycodes
   liftIO $ print opcode
-  delay 17
+  delay 160
   unless qPressed (runEmulator renderer nextGameState)
 
 updateKeycodes :: [Word8] -> Event -> [Word8]
@@ -50,10 +58,12 @@ updateKeycodes currentKeycodes event =
   case eventPayload event of
     KeyboardEvent keyboardEvent ->
       case keyboardEventKeyMotion keyboardEvent of
-        Pressed ->
-          (fromIntegral (unwrapKeycode (keysymKeycode (keyboardEventKeysym keyboardEvent))) :: Word8) : currentKeycodes
-        Released ->
-          filter ((fromIntegral $ unwrapKeycode $ keysymKeycode (keyboardEventKeysym keyboardEvent)) /=) currentKeycodes
+        Pressed -> do
+          let keycode = M.lookup (keysymKeycode (keyboardEventKeysym keyboardEvent)) keycodeMap
+          maybe currentKeycodes (\keycode -> fromIntegral (keycode) : currentKeycodes) keycode
+        Released -> do
+          let keycode = M.lookup (keysymKeycode (keyboardEventKeysym keyboardEvent)) keycodeMap
+          maybe currentKeycodes (\keycode -> filter ((fromIntegral $ keycode) /=) currentKeycodes) keycode
     _ -> currentKeycodes
 
 eventIsQPress :: Event -> Bool
