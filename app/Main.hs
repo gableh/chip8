@@ -10,7 +10,7 @@ import Emulator
 
 main :: IO ()
 main = do
-    let filename = "roms/BC_test.ch8"
+    let filename = "roms/games/Space Invaders [David Winter].ch8"
     initializeAll
     window <- createWindow "My SDL Application" defaultWindow {
         windowInitialSize = V2 screenWidth screenHeight

@@ -6,7 +6,8 @@ import qualified Data.ByteString.Lazy as B
 import SDL
 import Constants
 import Data.Int
-import Data.Word (Word8, Word16)
+import Data.Word (Word8, Word16, Word32)
+import Utils
 import qualified Data.Vector.Unboxed as U
 
 type GameState = (EmuState, U.Vector Word8)
@@ -21,10 +22,11 @@ data EmuState = EmuState {
     i::Word16,
     keycodes::[Word8],
     delayTimer::Word8,
-    soundTimer::Word8
+    soundTimer::Word8,
+    systemTime::Integer
 } deriving (Show, Eq)
 
-mkState :: String -> B.ByteString -> EmuState
+mkState :: String -> B.ByteString -> Integer -> EmuState
 mkState filename rom = EmuState filename rom 512 0 (U.replicate 12 0) (U.replicate 16 0) 0 [] 0 0
 
 mkMemory :: B.ByteString -> B.ByteString

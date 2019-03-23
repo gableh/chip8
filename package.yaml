@@ -37,6 +37,7 @@ dependencies:
 - primitive
 - spool
 - containers
+- time
 
 library:
   source-dirs: src

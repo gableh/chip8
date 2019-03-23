@@ -6,10 +6,15 @@ import qualified Data.ByteString.Lazy as B
 import Data.Binary.Get
 import Data.Bits
 import Data.Word
+import Data.Time.Clock.POSIX (getPOSIXTime)
 import Data.ByteString (ByteString)
 import Data.Vector.Storable (modify)
 import Data.Vector.Storable.ByteString
 import Data.Vector.Storable.Mutable (write)
+
+getTime :: IO Integer
+getTime = round . (* 1000) <$> getPOSIXTime
+
 fromHex :: (Eq a, Num a) => String -> a
 fromHex n = fst (head (readHex n))
 

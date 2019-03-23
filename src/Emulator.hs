@@ -16,6 +16,7 @@ import qualified Data.Map.Strict as M
 import qualified Data.Vector.Storable as S
 import qualified Data.Vector.Unboxed as U
 import Data.Word
+import Data.Time
 import EmuState
 import Foreign.C.Types (CInt)
 import Graphics
@@ -23,15 +24,24 @@ import Instructions
 import SDL
 import Constants
 import System.Random
-import Utils (getOpcode)
+import Utils (getOpcode, getTime)
 
 startEmulator :: MonadIO m => Renderer -> B.ByteString -> m ()
 startEmulator renderer rom = do
-  let state = mkState "filename" (mkMemory rom)
+  currentTime <- liftIO getTime
+  let state = mkState "filename" (mkMemory rom) currentTime
   runEmulator renderer (state, U.replicate (fromIntegral (chipHeight * chipWidth + 1) :: Int) 0)
+
+setDelayTimer 0 = 0
+setDelayTimer dt = dt - 1
 
 runEmulator :: MonadIO m => Renderer -> GameState -> m ()
 runEmulator renderer gameState@(currentState, buffer) = do
+  currentTime <- liftIO getTime
+  let (nextDelayTimer, nextTime) =
+        if currentTime - systemTime currentState > 16
+          then (setDelayTimer $ delayTimer currentState, currentTime)
+          else (delayTimer currentState, systemTime currentState)
   let rendererColor = rendererDrawColor renderer
   rendererColor $= V4 0 0 0 0
   clear renderer
@@ -41,16 +51,16 @@ runEmulator renderer gameState@(currentState, buffer) = do
   let keycodes = maybe currentKeycodes (updateKeycodes currentKeycodes) event
   let qPressed = maybe False eventIsQPress event
   let opcode = getOpcode (pc currentState) (memory currentState)
-
-  let nextGameState@(nextState, nextBuffer) = runCPU opcode (currentState {keycodes}, buffer)
-
+  let nextGameState@(nextState, nextBuffer) = runCPU opcode (currentState {
+    keycodes,
+    delayTimer = nextDelayTimer,
+    systemTime = nextTime}, buffer)
   let pixels :: Vector Int = U.elemIndices 1 nextBuffer
   let rectangles = S.generate (U.length pixels) (getXYPixel . (U.!) pixels)
   fillRects renderer rectangles
   present renderer
   liftIO $ print keycodes
   liftIO $ print opcode
-  delay 70
   unless qPressed (runEmulator renderer nextGameState)
 
 updateKeycodes :: [Word8] -> Event -> [Word8]
