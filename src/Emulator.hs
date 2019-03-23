@@ -28,7 +28,7 @@ import Utils (getOpcode)
 startEmulator :: MonadIO m => Renderer -> B.ByteString -> m ()
 startEmulator renderer rom = do
   let state = mkState "filename" (mkMemory rom)
-  runEmulator renderer (state, U.replicate (fromIntegral (chipHeight * chipWidth) :: Int) 0)
+  runEmulator renderer (state, U.replicate (fromIntegral (chipHeight * chipWidth + 1) :: Int) 0)
 
 runEmulator :: MonadIO m => Renderer -> GameState -> m ()
 runEmulator renderer gameState@(currentState, buffer) = do
