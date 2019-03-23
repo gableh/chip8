@@ -50,7 +50,7 @@ runEmulator renderer gameState@(currentState, buffer) = do
   present renderer
   liftIO $ print keycodes
   liftIO $ print opcode
-  delay 160
+  delay 70
   unless qPressed (runEmulator renderer nextGameState)
 
 updateKeycodes :: [Word8] -> Event -> [Word8]

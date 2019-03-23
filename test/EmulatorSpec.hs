@@ -310,23 +310,23 @@ spec =
 
     describe "Fx55 - LD [I], Vx" $ do
       let newRegister = U.generate 16 (\x -> [1 .. 16] !! x)
-      let (resultState, _) = runCPU "F555" (initialState {i=3000, register = newRegister}, U.replicate 10 1)
+      let (resultState, _) = runCPU "FF55" (initialState {i=3000, register = newRegister}, U.replicate 10 1)
       let resultMemory = memory resultState
       it "should set memory[i] to be 1" $ B.index resultMemory 3000 `shouldBe` 1
       it "should set memory[i+1] to be 2" $ B.index resultMemory 3001 `shouldBe` 2
       it "should set memory[i+2] to be 3" $ B.index resultMemory 3002 `shouldBe` 3
       it "should set memory[i+3] to be 4" $ B.index resultMemory 3003 `shouldBe` 4
       it "should set memory[i+4] to be 5" $ B.index resultMemory 3004 `shouldBe` 5
-      it "should not set memory[i+4] to be 6" $ B.index resultMemory 3005 `shouldBe` 0
+      it "should not set memory[i+5] to be 6" $ B.index resultMemory 3005 `shouldBe` 6
       it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
 
     describe "Fx65 - LD Vx, [I]" $ do
-      let (resultState, _) = runCPU "F565" (initialState {i=512, memory = mkMemory (B.pack [1,2,3,4,5])}, U.replicate 10 1)
+      let (resultState, _) = runCPU "F565" (initialState {i=512, memory = mkMemory (B.pack [1,2,3,4,5,6])}, U.replicate 10 1)
       let resultRegister = register resultState
       it "should set register[0] to 1" $ (U.!) resultRegister 0 `shouldBe` 1
       it "should set register[1] to 2" $ (U.!) resultRegister 1 `shouldBe` 2
       it "should set register[2] to 3" $ (U.!) resultRegister 2 `shouldBe` 3
       it "should set register[3] to 4" $ (U.!) resultRegister 3 `shouldBe` 4
       it "should set register[4] to 5" $ (U.!) resultRegister 4 `shouldBe` 5
-      it "should not set register[5] to anything" $ (U.!) resultRegister 5 `shouldBe` 0
+      it "should set register[5] to 6" $ (U.!) resultRegister 5 `shouldBe` 6
       it "should set the next pc to be current pc + 2" $ pc resultState `shouldBe` pc initialState + 2
