@@ -59,8 +59,6 @@ runEmulator renderer gameState@(currentState, buffer) = do
   let rectangles = S.generate (U.length pixels) (getXYPixel . (U.!) pixels)
   fillRects renderer rectangles
   present renderer
-  liftIO $ print keycodes
-  liftIO $ print opcode
   unless qPressed (runEmulator renderer nextGameState)
 
 updateKeycodes :: [Word8] -> Event -> [Word8]
